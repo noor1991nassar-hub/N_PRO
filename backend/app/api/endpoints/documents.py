@@ -59,10 +59,35 @@ async def list_documents(
     if not workspace:
          raise HTTPException(status_code=404, detail="Workspace not found.")
     
-    # In a real service we would have a method for this, but direct query is fine for now
-    from app.models.document import Document
+    # Sync status with Gemini for documents that are still indexing
+    from app.models.document import Document, ProcessingStatus
+    from app.services.gemini import gemini_service
+    
     stmt = select(Document).where(Document.workspace_id == workspace.id).order_by(Document.created_at.desc())
     result = await db.execute(stmt)
     docs = result.scalars().all()
+    
+    for d in docs:
+        if d.status == ProcessingStatus.INDEXING and d.gemini_file_uri:
+            try:
+                # Extract 'files/xxx' from URI. 
+                # URI format assumption: https://.../files/xxxx
+                if "/files/" in d.gemini_file_uri:
+                    file_name = "files/" + d.gemini_file_uri.split("/files/")[-1]
+                    
+                    state = await gemini_service.get_file_state(file_name)
+                    if state == "ACTIVE":
+                        d.status = ProcessingStatus.ACTIVE
+                        db.add(d)
+                        await db.commit()
+                        await db.refresh(d)
+                    elif state == "FAILED":
+                        d.status = ProcessingStatus.FAILED
+                        db.add(d)
+                        await db.commit()
+            except Exception as e:
+                # Log error but don't break listing
+                print(f"Error syncing doc {d.id}: {e}")
+                pass
     
     return [{"id": d.id, "title": d.title, "status": d.status, "created_at": d.created_at} for d in docs]
