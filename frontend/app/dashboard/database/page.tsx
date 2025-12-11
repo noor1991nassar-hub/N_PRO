@@ -6,24 +6,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Upload, FileText, Music, Video } from "lucide-react"
-import { uploadFile } from "@/lib/api"
+import { Progress } from "@/components/ui/progress"
 
 export default function DatabasePage() {
     const [file, setFile] = useState<File | null>(null)
     const [uploading, setUploading] = useState(false)
+    const [uploadProgress, setUploadProgress] = useState(0)
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             setFile(e.target.files[0])
+            setUploadProgress(0)
         }
     }
 
     const handleUpload = async () => {
         if (!file) return
         setUploading(true)
+        setUploadProgress(0)
 
         try {
-            await uploadFile(file)
+            await uploadFile(file, (percent) => {
+                setUploadProgress(percent)
+            })
+            setUploadProgress(100)
             alert("تم رفع الملف بنجاح! جاري الفهرسة...")
             setFile(null)
         } catch (error: any) {
@@ -31,6 +37,7 @@ export default function DatabasePage() {
             alert("فشل الرفع: " + (error.message || "Unknown error"))
         } finally {
             setUploading(false)
+            setUploadProgress(0)
         }
     }
 
@@ -54,6 +61,12 @@ export default function DatabasePage() {
                             <Label htmlFor="file">الملف</Label>
                             <Input id="file" type="file" onChange={handleFileChange} />
                         </div>
+                        {uploading && (
+                            <div className="space-y-1">
+                                <Progress value={uploadProgress} className="h-2" />
+                                <p className="text-xs text-muted-foreground text-center">{uploadProgress}%</p>
+                            </div>
+                        )}
                         <Button onClick={handleUpload} disabled={!file || uploading} className="w-full">
                             {uploading ? "جاري الرفع..." : "رفع الملف"}
                             <Upload className="mr-2 h-4 w-4" />
