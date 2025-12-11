@@ -63,7 +63,7 @@ class GeminiService:
         """
         Generates an answer using Gemini 1.5 Pro with File Search (via file_uris).
         """
-        model_name = "gemini-1.5-pro"
+        model_name = "gemini-2.0-flash"
         
         parts = []
         for uri in file_uris:
