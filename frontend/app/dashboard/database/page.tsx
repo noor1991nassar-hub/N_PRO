@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Upload, FileText, Music, Video } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
+import { uploadFile } from "@/lib/api"
 
 export default function DatabasePage() {
     const [file, setFile] = useState<File | null>(null)
