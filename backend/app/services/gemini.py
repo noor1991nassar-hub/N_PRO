@@ -85,7 +85,18 @@ class GeminiService:
         parts.append(query)
         
         if system_instruction is None:
-            system_instruction = "You are a professional assistant. Answer in Arabic."
+            # Improved System Prompt for RAG
+            system_instruction = (
+                "You are an intelligent corporate assistant. "
+                "You have access to the user's private documents. "
+                "Your task is to answer the user's specific question based on these documents. "
+                "CRITICAL RULES:\n"
+                "1. Answer ONLY what is asked. Do not summarize the document unless explicitly requested.\n"
+                "2. Be concise and direct. Avoid fluff.\n"
+                "3. If the answer is in the document, quote it or reference the page number.\n"
+                "4. Respond in the same language as the user's question (likely Arabic).\n"
+                "5. If the answer is not in the document, state that clearly."
+            )
 
         try:
              chat_model = genai.GenerativeModel(
