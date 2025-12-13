@@ -44,21 +44,37 @@ class RAGService:
                     print(f"DEBUG: Gemini delete failed (ignoring): {e}")
 
                 try:
-                    # Clean up DB (ORM Cascade)
-                    # We must load the relationships so SQLAlchemy knows what to delete
-                    stmt = select(Document).options(
-                        selectinload(Document.invoices).selectinload(FinanceInvoice.items),
-                        selectinload(Document.invoices).selectinload(FinanceInvoice.audit_logs)
-                    ).where(Document.file_uri == existing_file.uri)
-                    
+                    # Clean up DB (Manual Force with Flush)
+                    # 1. Get Old Document
+                    stmt = select(Document).where(Document.file_uri == existing_file.uri)
                     result = await db.execute(stmt)
                     old_doc = result.scalars().first()
                     
                     if old_doc:
-                        print(f"DEBUG: Found old doc {old_doc.id}, loaded relationships for cascade.")
+                        print(f"DEBUG: Found old doc {old_doc.id}, starting manual clean cleanup")
+                        
+                        # 2. Get Related Invoices
+                        inv_stmt = select(FinanceInvoice).where(FinanceInvoice.document_id == old_doc.id)
+                        inv_result = await db.execute(inv_stmt)
+                        invoices = inv_result.scalars().all()
+                        invoice_ids = [inv.id for inv in invoices]
+                        
+                        if invoice_ids:
+                            print(f"DEBUG: Clearing invoices: {invoice_ids}")
+                            # 3. Clean Child Tables
+                            await db.execute(delete(FinanceInvoiceItem).where(FinanceInvoiceItem.invoice_id.in_(invoice_ids)))
+                            await db.execute(delete(FinanceAuditFlag).where(FinanceAuditFlag.invoice_id.in_(invoice_ids)))
+                            await db.flush() # Force Item Deletion
+                            
+                            # 4. Clean Invoices
+                            await db.execute(delete(FinanceInvoice).where(FinanceInvoice.id.in_(invoice_ids)))
+                            await db.flush() # Force Invoice Deletion
+                        
+                        # 5. Clean Document
+                        print(f"DEBUG: Deleting document {old_doc.id}")
                         await db.delete(old_doc)
-                        await db.commit()
-                        print(f"DEBUG: Old DB doc deleted via Cascade")
+                        await db.commit() # Final Commit
+                        print(f"DEBUG: Force Overwrite Complete")
                 except Exception as e:
                     print(f"DEBUG: DB Delete failed: {e}")
                     await db.rollback()
