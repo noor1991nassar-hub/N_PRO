@@ -18,7 +18,10 @@ import {
     Database,
     Send,
     User,
-    RefreshCw
+    RefreshCw,
+    CheckCircle,
+    XCircle,
+    Cpu
 } from "lucide-react";
 import { uploadFile, chatWithWorkspace } from '@/lib/api';
 import axios from 'axios';
@@ -41,7 +44,9 @@ async function fetchInvoices() {
 }
 
 export default function FinanceDashboard() {
-    const [isUploading, setIsUploading] = useState(false);
+    const [status, setStatus] = useState<'idle' | 'uploading' | 'analyzing' | 'success' | 'error'>('idle');
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [errorMessage, setErrorMessage] = useState("");
     const [invoices, setInvoices] = useState<any[]>([]);
     const [activeTab, setActiveTab] = useState("dashboard");
 
@@ -79,23 +84,40 @@ export default function FinanceDashboard() {
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.length) return;
-        setIsUploading(true);
+
+        setStatus('uploading');
+        setUploadProgress(0);
+        setErrorMessage("");
+
         try {
             const file = e.target.files[0];
-            // 1. Upload
-            const doc = await uploadFile(file);
+
+            // 1. Upload with Progress
+            const doc = await uploadFile(file, (percent) => {
+                setUploadProgress(percent);
+            });
             console.log("Uploaded:", doc);
 
-            // 2. Trigger Extraction
+            // 2. Trigger Extraction (AI Analysis)
+            setStatus('analyzing');
             await triggerExtraction(doc.id);
-            alert("تم رفع الملف وبدء عملية استخراج البيانات بذكاء!");
 
-            // 3. Switch to Grid to see result (optimistic)
-            setActiveTab("datagrid");
-        } catch (err) {
-            alert("فشل الرفع: " + err);
-        } finally {
-            setIsUploading(false);
+            // Artificial delay to let user see the "Analyzing" state for a moment
+            await new Promise(r => setTimeout(r, 1500));
+
+            setStatus('success');
+
+            // 3. Switch to Grid
+            setTimeout(() => {
+                setActiveTab("datagrid");
+                setStatus('idle');
+                setUploadProgress(0);
+            }, 1000);
+
+        } catch (err: any) {
+            console.error(err);
+            setStatus('error');
+            setErrorMessage(err.message || "فشل غير معروف في معالجة الملف");
         }
     };
 
@@ -120,9 +142,9 @@ export default function FinanceDashboard() {
                 <div className="flex gap-3">
                     <Button variant="outline">تصدير تقرير شهري</Button>
                     <div className="relative">
-                        <input type="file" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer" disabled={isUploading} />
-                        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2" disabled={isUploading}>
-                            {isUploading ? <Loader2 className="animate-spin w-4 h-4" /> : <UploadCloud className="w-4 h-4" />}
+                        <input type="file" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer" disabled={status !== 'idle'} />
+                        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2" disabled={status !== 'idle'}>
+                            {status !== 'idle' ? <Loader2 className="animate-spin w-4 h-4" /> : <UploadCloud className="w-4 h-4" />}
                             رفع فواتير جديدة
                         </Button>
                     </div>
@@ -174,13 +196,60 @@ export default function FinanceDashboard() {
                                 <CardTitle>رفع ملفات جديدة</CardTitle>
                                 <CardDescription>قم بسحب وإفلات الفواتير هنا.</CardDescription>
                             </CardHeader>
-                            <CardContent className="h-[320px] flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg m-4 bg-muted/20 hover:bg-muted/30 transition-colors">
-                                <UploadCloud className="w-12 h-12 text-muted-foreground mb-4" />
-                                <h3 className="text-lg font-medium text-foreground">اضغط أو اسحب الملف</h3>
-                                <div className="relative mt-4">
-                                    <input type="file" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer" disabled={isUploading} />
-                                    <Button disabled={isUploading}>{isUploading ? "جاري الرفع..." : "اختيار ملف"}</Button>
-                                </div>
+                            <CardContent className="h-[320px] flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg m-4 bg-muted/20 hover:bg-muted/30 transition-colors relative overflow-hidden">
+                                {status === 'idle' && (
+                                    <>
+                                        <UploadCloud className="w-12 h-12 text-muted-foreground mb-4" />
+                                        <h3 className="text-lg font-medium text-foreground">اضغط أو اسحب الملف</h3>
+                                        <div className="relative mt-4">
+                                            <input type="file" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                            <Button>اختيار ملف</Button>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* وضع المعالجة (Status View) */}
+                                {status !== 'idle' && (
+                                    <div className="w-full max-w-xs space-y-6">
+                                        {/* Step 1: Upload */}
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between text-sm">
+                                                <span className={status === 'uploading' ? 'text-primary font-bold' : 'text-muted-foreground'}>
+                                                    1. رفع الملف للصندوق
+                                                </span>
+                                                <span className="text-muted-foreground">{uploadProgress}%</span>
+                                            </div>
+                                            <div className="h-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-blue-500 transition-all duration-300"
+                                                    style={{ width: `${uploadProgress}%` }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Step 2: AI Analysis */}
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-full ${status === 'analyzing' ? 'bg-amber-100 text-amber-600 animate-pulse' :
+                                                    status === 'success' ? 'bg-emerald-100 text-emerald-600' :
+                                                        status === 'error' ? 'bg-red-100 text-red-600' :
+                                                            'bg-slate-100 text-slate-400'
+                                                }`}>
+                                                {status === 'analyzing' && <Cpu className="w-5 h-5 animate-spin-slow" />}
+                                                {status === 'success' && <CheckCircle className="w-5 h-5" />}
+                                                {status === 'error' && <XCircle className="w-5 h-5" />}
+                                                {(status === 'uploading' || status === 'idle') && <Cpu className="w-5 h-5" />}
+                                            </div>
+                                            <div>
+                                                <p className={`font-medium ${status === 'analyzing' ? 'text-amber-600' : 'text-foreground'}`}>
+                                                    2. التحليل الذكي (AI)
+                                                </p>
+                                                {status === 'analyzing' && <p className="text-xs text-muted-foreground">جاري قراءة البيانات...</p>}
+                                                {status === 'success' && <p className="text-xs text-emerald-600">تم الاستخراج بنجاح!</p>}
+                                                {status === 'error' && <p className="text-xs text-red-600">{errorMessage}</p>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
 
