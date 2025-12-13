@@ -8,20 +8,39 @@ const TabsContext = React.createContext<{
     onValueChange: (value: string) => void
 } | null>(null)
 
-const Tabs = React.forwardRef<
-    HTMLDivElement,
-    React.HTMLAttributes<HTMLDivElement> & { defaultValue: string }
->(({ className, defaultValue, children, ...props }, ref) => {
-    const [value, setValue] = React.useState(defaultValue)
+interface TabsProps extends React.HTMLAttributes<HTMLDivElement> {
+    defaultValue?: string
+    value?: string
+    onValueChange?: (value: string) => void
+}
 
-    return (
-        <TabsContext.Provider value={{ value, onValueChange: setValue }}>
-            <div ref={ref} className={cn("dir-rtl", className)} {...props}>
-                {children}
-            </div>
-        </TabsContext.Provider>
-    )
-})
+const Tabs = React.forwardRef<HTMLDivElement, TabsProps>(
+    ({ className, defaultValue, value: controlledValue, onValueChange, children, ...props }, ref) => {
+        // Internal state for uncontrolled usage
+        const [internalValue, setInternalValue] = React.useState(defaultValue || "")
+
+        // Determine effective value (Controlled > Uncontrolled)
+        const activeValue = controlledValue !== undefined ? controlledValue : internalValue
+
+        const handleValueChange = (newValue: string) => {
+            // Create a change handler that respects both modes
+            if (onValueChange) {
+                onValueChange(newValue)
+            }
+            if (controlledValue === undefined) {
+                setInternalValue(newValue)
+            }
+        }
+
+        return (
+            <TabsContext.Provider value={{ value: activeValue, onValueChange: handleValueChange }}>
+                <div ref={ref} className={cn("dir-rtl", className)} {...props}>
+                    {children}
+                </div>
+            </TabsContext.Provider>
+        )
+    }
+)
 Tabs.displayName = "Tabs"
 
 const TabsList = React.forwardRef<
