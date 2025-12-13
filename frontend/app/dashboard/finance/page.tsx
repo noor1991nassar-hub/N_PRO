@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
     LayoutDashboard,
     UploadCloud,
@@ -14,9 +15,11 @@ import {
     AlertCircle,
     FileCheck,
     Loader2,
-    Database
+    Database,
+    Send,
+    User
 } from "lucide-react";
-import { uploadFile } from '@/lib/api';
+import { uploadFile, chatWithWorkspace } from '@/lib/api';
 import axios from 'axios';
 
 // API Functions (Local/Prod aware via ENV)
@@ -47,6 +50,31 @@ export default function FinanceDashboard() {
             fetchInvoices().then(setInvoices).catch(console.error);
         }
     }, [activeTab]);
+
+    // Chat State
+    const [messages, setMessages] = useState<{ role: 'user' | 'ai', content: string }[]>([
+        { role: 'ai', content: 'مرحباً، أنا محلك المالي الشخصي. جاهز للإجابة عن أسئلتك بخصوص الفواتير والميزانية.' }
+    ]);
+    const [chatInput, setChatInput] = useState("");
+    const [isChatting, setIsChatting] = useState(false);
+
+    const handleChat = async () => {
+        if (!chatInput.trim()) return;
+        const userMsg = chatInput;
+        setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+        setChatInput("");
+        setIsChatting(true);
+
+        try {
+            // Using a demo email that maps to 'accountant' role
+            const res = await chatWithWorkspace(userMsg, "finance@demo.com");
+            setMessages(prev => [...prev, { role: 'ai', content: res.answer }]);
+        } catch (error) {
+            setMessages(prev => [...prev, { role: 'ai', content: "عذراً، حدث خطأ أثناء الاتصال بالخادم." }]);
+        } finally {
+            setIsChatting(false);
+        }
+    };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.length) return;
@@ -294,18 +322,49 @@ export default function FinanceDashboard() {
                             </CardTitle>
                             <CardDescription>اسأل عن أي تفاصيل مالية أو اطلب تحليلات معقدة.</CardDescription>
                         </CardHeader>
-                        <CardContent className="flex-1 flex items-center justify-center">
-                            <div className="text-center space-y-4 max-w-md">
-                                <Bot className="w-16 h-16 text-slate-200 mx-auto" />
-                                <h3 className="text-xl font-medium text-slate-700">كيف يمكنني مساعدتك اليوم؟</h3>
-                                <div className="grid grid-cols-1 gap-2">
-                                    <Button variant="outline" className="justify-start h-auto py-3 px-4 text-right">
-                                        "ما هي أكثر 3 بنود استهلاكاً للميزانية هذا الشهر؟"
-                                    </Button>
-                                    <Button variant="outline" className="justify-start h-auto py-3 px-4 text-right">
-                                        "أنشئ مقارنة بين مصاريف الربع الأول والربع الثاني."
-                                    </Button>
-                                </div>
+                        <CardContent className="flex-1 flex flex-col p-4 overflow-hidden">
+                            {/* منطقة الرسائل */}
+                            <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 border rounded-lg bg-muted/10">
+                                {messages.map((msg, idx) => (
+                                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-start' : 'justify-end'}`}>
+                                        <div className={`max-w-[80%] rounded-lg p-3 ${msg.role === 'user'
+                                                ? 'bg-primary text-primary-foreground rounded-tr-none'
+                                                : 'bg-muted text-foreground rounded-tl-none border border-border'
+                                            }`}>
+                                            <div className="flex items-center gap-2 mb-1 opacity-70 text-xs">
+                                                {msg.role === 'user' ? <User className="w-3 h-3" /> : <Bot className="w-3 h-3" />}
+                                                <span>{msg.role === 'user' ? 'أنت' : 'المساعد'}</span>
+                                            </div>
+                                            <p className="whitespace-pre-wrap">{msg.content}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                                {isChatting && (
+                                    <div className="flex justify-end">
+                                        <div className="bg-muted text-foreground p-3 rounded-lg rounded-tl-none border border-border">
+                                            <div className="flex items-center gap-2">
+                                                <Loader2 className="w-3 h-3 animate-spin" />
+                                                <span className="text-sm">جاري التحليل...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* منطقة الإدخال */}
+                            <div className="flex gap-2">
+                                <Button onClick={handleChat} disabled={isChatting} className="gap-2">
+                                    <Send className={`w-4 h-4 ${isChatting ? 'opacity-0' : ''}`} />
+                                    {isChatting ? <Loader2 className="w-4 h-4 animate-spin absolute" /> : "إرسال"}
+                                </Button>
+                                <Input
+                                    placeholder="اكتب سؤالك المالي هنا..."
+                                    value={chatInput}
+                                    onChange={(e) => setChatInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleChat()}
+                                    disabled={isChatting}
+                                    className="flex-1" // Make it stretch to fill space
+                                />
                             </div>
                         </CardContent>
                     </Card>
