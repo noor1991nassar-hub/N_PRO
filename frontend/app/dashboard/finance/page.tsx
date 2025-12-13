@@ -70,7 +70,7 @@ export default function FinanceDashboard() {
     };
 
     return (
-        <div className="p-8 w-full min-h-screen bg-slate-50 dark:bg-slate-950 font-sans" dir="rtl">
+        <div className="p-8 w-full font-sans" dir="rtl">
 
             {/* 1. رأس الصفحة (Header) */}
             <div className="flex justify-between items-center mb-8">
