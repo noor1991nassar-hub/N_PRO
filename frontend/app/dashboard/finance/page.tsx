@@ -478,6 +478,32 @@ export default function FinanceDashboard() {
                 </TabsContent>
 
             </Tabs>
+            {/* Duplicate Alert Modal - RE-INSERTED */}
+            {showDuplicateAlert && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-card text-card-foreground p-6 rounded-lg shadow-xl max-w-md w-full border border-border">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 bg-amber-100 rounded-full">
+                                <AlertCircle className="w-6 h-6 text-amber-600" />
+                            </div>
+                            <h3 className="text-xl font-bold">ملف مكرر!</h3>
+                        </div>
+                        <p className="text-muted-foreground mb-6">
+                            هذا الملف موجود بالفعل في النظام. هل تريد استبداله؟
+                            < br />
+                            <span className="text-xs text-red-500">سيتم حذف النسخة القديمة نهائياً.</span>
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <Button variant="outline" onClick={() => { setShowDuplicateAlert(false); setPendingFile(null); }}>
+                                إلغاء
+                            </Button>
+                            <Button variant="destructive" onClick={confirmOverwrite}>
+                                استبدال الملف
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
