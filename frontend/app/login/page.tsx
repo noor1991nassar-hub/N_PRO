@@ -26,13 +26,21 @@ export default function LoginPage() {
             // ---------------------------------------------------------
             await new Promise(resolve => setTimeout(resolve, 1500)); // تأخير مصطنع 1.5 ثانية
 
-            // هذه البيانات المفترض أن تأتي من الباك إند بعد نجاح الدخول
-            // يمكنك تغيير role هنا لتجربة توجيهات مختلفة: 'engineer', 'lawyer', 'accountant', 'hr'
+            // تحديد الدور بناءً على البريد الإلكتروني للتجربة
+            let detectedRole = 'engineer';
+            if (email.toLowerCase().includes('finance') || email.toLowerCase().includes('accountant') || email.toLowerCase().includes('malia')) {
+                detectedRole = 'accountant';
+            } else if (email.toLowerCase().includes('legal') || email.toLowerCase().includes('lawyer')) {
+                detectedRole = 'lawyer';
+            } else if (email.toLowerCase().includes('hr')) {
+                detectedRole = 'hr';
+            }
+
             const mockResponse = {
                 token: "ey_fake_jwt_token_123456",
                 user: {
-                    name: "م. أحمد الشريف",
-                    role: "engineer", // <--- هذا المفتاح هو الذي يحدد الوجهة
+                    name: detectedRole === 'accountant' ? "أ. سارة المالية" : "م. أحمد الشريف",
+                    role: detectedRole,
                     company: "شركة المقاولون المتحدون"
                 }
             };
