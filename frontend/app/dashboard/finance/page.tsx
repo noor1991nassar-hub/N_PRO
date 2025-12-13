@@ -13,7 +13,8 @@ import {
     TrendingUp,
     AlertCircle,
     FileCheck,
-    Loader2
+    Loader2,
+    Database
 } from "lucide-react";
 import { uploadFile } from '@/lib/api';
 import axios from 'axios';
@@ -136,21 +137,71 @@ export default function FinanceDashboard() {
                 </TabsContent>
 
                 {/* --- التاب 2: مركز الوثائق (Documents) --- */}
-                <TabsContent value="documents">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>أرشيف الملفات</CardTitle>
-                            <CardDescription>إدارة ورفع الملفات المالية (PDF, Images, Excel).</CardDescription>
-                        </CardHeader>
-                        <CardContent className="h-[400px] flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg m-6 bg-muted/20">
-                            <UploadCloud className="w-16 h-16 text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-medium text-foreground">اسحب الملفات هنا للرفع</h3>
-                            <div className="relative mt-4">
-                                <input type="file" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer" disabled={isUploading} />
-                                <Button disabled={isUploading}>{isUploading ? "جاري الرفع..." : "اختيار ملفات"}</Button>
-                            </div>
-                        </CardContent>
-                    </Card>
+                <TabsContent value="documents" className="space-y-6">
+                    <div className="grid gap-6 md:grid-cols-2">
+                        {/* 1. مربع الرفع (Upload Box) */}
+                        <Card className="h-[430px]">
+                            <CardHeader>
+                                <CardTitle>رفع ملفات جديدة</CardTitle>
+                                <CardDescription>قم بسحب وإفلات الفواتير هنا.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="h-[320px] flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg m-4 bg-muted/20 hover:bg-muted/30 transition-colors">
+                                <UploadCloud className="w-12 h-12 text-muted-foreground mb-4" />
+                                <h3 className="text-lg font-medium text-foreground">اضغط أو اسحب الملف</h3>
+                                <div className="relative mt-4">
+                                    <input type="file" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer" disabled={isUploading} />
+                                    <Button disabled={isUploading}>{isUploading ? "جاري الرفع..." : "اختيار ملف"}</Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* 2. مربع الإحصائيات (Statistics Box) */}
+                        <Card className="h-[430px]">
+                            <CardHeader>
+                                <CardTitle>إحصائيات الأرشيف</CardTitle>
+                                <CardDescription>ملخص سريع للمستندات المعالجة.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {/* Stat 1 */}
+                                <div className="flex items-center gap-4 p-4 border rounded-lg bg-card text-card-foreground">
+                                    <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                                        <FileCheck className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">إجمالي الملفات المعالجة</p>
+                                        <h4 className="text-2xl font-bold">{invoices.length}</h4>
+                                    </div>
+                                </div>
+
+                                {/* Stat 2 */}
+                                <div className="flex items-center gap-4 p-4 border rounded-lg bg-card text-card-foreground">
+                                    <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                                        <TrendingUp className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">آخر ملف تمت إضافته</p>
+                                        <h4 className="text-base font-semibold truncate max-w-[200px]">
+                                            {invoices.length > 0 ? (invoices[0].invoice_number || "فاتورة جديدة") : "-"}
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground">
+                                            {invoices.length > 0 && invoices[0].invoice_date ? new Date(invoices[0].invoice_date).toLocaleDateString() : "لا يوجد"}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Stat 3: Storage Used (Mock) */}
+                                <div className="flex items-center gap-4 p-4 border rounded-lg bg-card text-card-foreground">
+                                    <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full">
+                                        <Database className="w-6 h-6 text-green-600 dark:text-green-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">مساحة التخزين المستخدمة</p>
+                                        <h4 className="text-2xl font-bold">2.4 GB</h4>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </TabsContent>
 
                 {/* --- التاب 3: سجل البيانات (Data Grid) --- */}
