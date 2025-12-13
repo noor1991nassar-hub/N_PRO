@@ -63,3 +63,17 @@ export async function getDocuments() {
 
     return res.json();
 }
+
+export async function triggerExtraction(docId: number) {
+    const res = await axios.post(`${API_URL}/app/finance/extract/${docId}`, {}, {
+        headers: { "X-Tenant-ID": TENANT_ID }
+    });
+    return res.data;
+}
+
+export async function fetchInvoices() {
+    const res = await axios.get(`${API_URL}/app/finance/invoices`, {
+        headers: { "X-Tenant-ID": TENANT_ID }
+    });
+    return res.data;
+}

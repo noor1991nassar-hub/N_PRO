@@ -23,25 +23,10 @@ import {
     XCircle,
     Cpu
 } from "lucide-react";
-import { uploadFile, chatWithWorkspace } from '@/lib/api';
-import axios from 'axios';
+import { uploadFile, chatWithWorkspace, triggerExtraction, fetchInvoices } from '@/lib/api';
 
 // API Functions (Local/Prod aware via ENV)
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-const TENANT_ID = "Construction Corp";
 
-async function triggerExtraction(docId: number) {
-    await axios.post(`${API_URL}/app/finance/extract/${docId}`, {}, {
-        headers: { "X-Tenant-ID": TENANT_ID }
-    });
-}
-
-async function fetchInvoices() {
-    const res = await axios.get(`${API_URL}/app/finance/invoices`, {
-        headers: { "X-Tenant-ID": TENANT_ID }
-    });
-    return res.data;
-}
 
 export default function FinanceDashboard() {
     const [status, setStatus] = useState<'idle' | 'uploading' | 'analyzing' | 'success' | 'error'>('idle');
