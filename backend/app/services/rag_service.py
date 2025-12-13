@@ -3,6 +3,8 @@ from sqlalchemy import select
 from fastapi import UploadFile, HTTPException
 from app.models.document import Document
 from app.models.tenant import Tenant, User
+from app.models.finance import FinanceInvoice, FinanceInvoiceItem, FinanceAuditFlag
+from sqlalchemy import select, delete
 from app.services.gemini import gemini_service
 import shutil
 import os
@@ -41,15 +43,37 @@ class RAGService:
                     print(f"DEBUG: Gemini delete failed (ignoring): {e}")
 
                 try:
-                    # Clean up DB (Optional: Soft delete or reuse?)
+                    # Clean up DB (Manual Cascade to avoid FK Violation)
+                    # 1. Get Old Document
                     stmt = select(Document).where(Document.file_uri == existing_file.uri)
                     result = await db.execute(stmt)
                     old_doc = result.scalars().first()
+                    
                     if old_doc:
-                        print(f"DEBUG: Deleting old DB doc {old_doc.id}")
+                        print(f"DEBUG: Found old doc {old_doc.id}, starting cascade delete")
+                        
+                        # 2. Get Related Invoices
+                        inv_stmt = select(FinanceInvoice).where(FinanceInvoice.document_id == old_doc.id)
+                        inv_result = await db.execute(inv_stmt)
+                        invoices = inv_result.scalars().all()
+                        
+                        invoice_ids = [inv.id for inv in invoices]
+                        
+                        # 3. Delete Invoice Items & Audit Logs
+                        if invoice_ids:
+                            print(f"DEBUG: Deleting items for invoices: {invoice_ids}")
+                            await db.execute(delete(FinanceInvoiceItem).where(FinanceInvoiceItem.invoice_id.in_(invoice_ids)))
+                            await db.execute(delete(FinanceAuditFlag).where(FinanceAuditFlag.invoice_id.in_(invoice_ids)))
+                            
+                            # 4. Delete Invoices
+                            print(f"DEBUG: Deleting invoices")
+                            await db.execute(delete(FinanceInvoice).where(FinanceInvoice.id.in_(invoice_ids)))
+                        
+                        # 5. Delete Document
+                        print(f"DEBUG: Deleting document {old_doc.id}")
                         await db.delete(old_doc)
                         await db.commit()
-                        print(f"DEBUG: Old DB doc deleted")
+                        print(f"DEBUG: Force Overwrite Complete (Clean)")
                 except Exception as e:
                     print(f"DEBUG: DB Delete failed: {e}")
                     await db.rollback()
