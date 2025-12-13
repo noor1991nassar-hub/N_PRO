@@ -40,16 +40,20 @@ class RAGService:
                 except Exception as e:
                     print(f"DEBUG: Gemini delete failed (ignoring): {e}")
 
-                # Clean up DB (Optional: Soft delete or reuse?)
-                # For strict sync, let's delete the old Document record if it matches this file_uri logic
-                stmt = select(Document).where(Document.file_uri == existing_file.uri)
-                result = await db.execute(stmt)
-                old_doc = result.scalars().first()
-                if old_doc:
-                    print(f"DEBUG: Deleting old DB doc {old_doc.id}")
-                    await db.delete(old_doc)
-                    await db.commit()
-                    print(f"DEBUG: Old DB doc deleted")
+                try:
+                    # Clean up DB (Optional: Soft delete or reuse?)
+                    stmt = select(Document).where(Document.file_uri == existing_file.uri)
+                    result = await db.execute(stmt)
+                    old_doc = result.scalars().first()
+                    if old_doc:
+                        print(f"DEBUG: Deleting old DB doc {old_doc.id}")
+                        await db.delete(old_doc)
+                        await db.commit()
+                        print(f"DEBUG: Old DB doc deleted")
+                except Exception as e:
+                    print(f"DEBUG: DB Delete failed: {e}")
+                    await db.rollback()
+                    raise HTTPException(status_code=500, detail=f"Overwrite failed during DB cleanup: {str(e)}")
         
         # 1. Save locally
         file_ext = os.path.splitext(file.filename)[1]
