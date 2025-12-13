@@ -1,38 +1,37 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
-import enum
-
-class ProcessingStatus(str, enum.Enum):
-    PENDING = "PENDING"
-    UPLOADING = "UPLOADING"
-    INDEXING = "INDEXING"
-    ACTIVE = "ACTIVE"
-    FAILED = "FAILED"
-
-class FileType(str, enum.Enum):
-    PDF = "PDF"
-    MP3 = "MP3"
-    MP4 = "MP4"
 
 class Document(Base):
+    """
+    Represents Uploaded Knowledge Base.
+    """
     __tablename__ = "documents"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False)
-    file_type = Column(Enum(FileType), nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"))
     
-    # Path in local storage or GCS (if using intermediate storage)
-    local_path = Column(String, nullable=True) 
+    filename = Column(String)
+    file_uri = Column(String) # Google Gemini File URI
     
-    # ID in Gemini File API
-    gemini_file_uri = Column(String, unique=True, nullable=True)
+    # Security: Which vertical can see this file?
+    # e.g., "engineer" (only engineers see this), or "general" (everyone sees it)
+    access_level = Column(String, default="general") 
     
-    status = Column(Enum(ProcessingStatus), default=ProcessingStatus.PENDING)
-    error_message = Column(String, nullable=True)
+    upload_date = Column(DateTime(timezone=True), server_default=func.now())
+    status = Column(String, default="indexing")
     
-    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    tenant = relationship("Tenant", back_populates="documents")
 
-    workspace = relationship("Workspace", back_populates="documents")
+    @property
+    def title(self):
+        return self.filename
+
+    @property
+    def created_at(self):
+        return self.upload_date
+
+    @property
+    def gemini_file_uri(self):
+        return self.file_uri

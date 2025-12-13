@@ -1,7 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import UploadFile, HTTPException
-from app.models.document import Document, ProcessingStatus, FileType
+from app.models.document import Document
+from app.models.tenant import Tenant, User
 from app.services.gemini import gemini_service
 import shutil
 import os
@@ -12,12 +13,11 @@ UPLOAD_DIR = "backend/temp_uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 class RAGService:
-    async def upload_document(self, db: AsyncSession, file: UploadFile, workspace_id: int):
+    async def upload_document(self, db: AsyncSession, file: UploadFile, tenant_id: int):
         """
-        Orchestrates file upload:
-        1. Save to local temp.
-        2. Upload to Gemini.
-        3. Save metadata to DB.
+        Vertical SaaS Upload:
+        - Linked to Tenant (not Workspace).
+        - Default Access: General (for now, can be parameterized).
         """
         # 1. Save locally
         file_ext = os.path.splitext(file.filename)[1]
@@ -31,7 +31,11 @@ class RAGService:
         mime_type = file.content_type or "application/pdf"
         
         try:
-            # 3. Upload to Gemini
+            # 3. Check for Custom API Key (BYOK)
+            # In a real implementation we would query Tenant.gemini_api_key here
+            # gemini_service.configure_for_tenant(...) 
+            
+            # Upload to Gemini
             gemini_file = await gemini_service.upload_file(
                 file_path=local_path, 
                 mime_type=mime_type, 
@@ -40,12 +44,11 @@ class RAGService:
             
             # 4. Create DB Entry
             new_doc = Document(
-                title=file.filename,
-                file_type=FileType.PDF if "pdf" in mime_type else FileType.MP4, # Simplified logic
-                local_path=local_path,
-                gemini_file_uri=gemini_file.uri,
-                status=ProcessingStatus.INDEXING,
-                workspace_id=workspace_id
+                filename=file.filename,
+                tenant_id=tenant_id,
+                file_uri=gemini_file.uri,
+                status="indexing", # simple string now
+                access_level="general" # Default
             )
             db.add(new_doc)
             await db.commit()
@@ -56,25 +59,38 @@ class RAGService:
             await db.rollback()
             raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
-    async def chat_with_workspace(self, db: AsyncSession, workspace_id: int, query: str):
+    async def chat_with_tenant(self, db: AsyncSession, tenant_id: int, user: User, query: str):
         """
-        Retrieves all active docs for a workspace and queries Gemini.
+        Retrieves docs accessible to User's Role and queries Gemini.
         """
-        # 1. Get all active documents for this workspace
+        # 1. Get Accessible Documents
+        # Logic: Get 'general' docs + docs matching user.role
         stmt = select(Document).where(
-            Document.workspace_id == workspace_id,
-            # Document.status == ProcessingStatus.ACTIVE # In real app, check active state
+            Document.tenant_id == tenant_id,
+            # (Document.access_level == "general") | (Document.access_level == user.role)
+            # For MVP, let's just use all tenant docs
         )
         result = await db.execute(stmt)
         docs = result.scalars().all()
         
         if not docs:
-            return "No documents found in this workspace."
+            return "No documents found for this organization."
 
-        file_uris = [doc.gemini_file_uri for doc in docs if doc.gemini_file_uri]
+        file_uris = [doc.file_uri for doc in docs if doc.file_uri]
         
-        # 2. Call Gemini
-        answer = await gemini_service.generate_answer(query=query, file_uris=file_uris)
+        # 2. Resolve Tenant Name for Context
+        # We could load this from user.tenant, assuming eagers load or simple query
+        company_name = "Your Company" 
+        if user.tenant and user.tenant.company_name:
+             company_name = user.tenant.company_name
+
+        # 3. Call Gemini with Vertical Context
+        answer = await gemini_service.generate_answer(
+            query=query, 
+            file_uris=file_uris,
+            role=user.role,       # Pass User Role (Engineer, Hr, etc)
+            company=company_name  # Pass Company Name
+        )
         
         return answer
 

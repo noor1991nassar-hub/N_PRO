@@ -1,10 +1,29 @@
 import asyncio
 from logging.config import fileConfig
+from dotenv import load_dotenv
+
+load_dotenv() # Force load .env before settings
 import sys
 import os
 
 # Append backend directory to sys.path to allow imports from app
-sys.path.append(os.path.join(os.getcwd(), 'backend'))
+import sys
+import os
+
+# If running from backend directory, add Parent to path? No, 'app' is inside backend.
+# We need 'backend' to be the root of import if we assume 'app' is top level package...
+# Actually, the structure is:
+# backend/
+#   app/
+#     main.py
+# So if we run inside backend, we can import app.
+# If we run from project root, we need to add backend.
+
+current_dir = os.getcwd()
+if current_dir.endswith("backend"):
+    sys.path.append(current_dir)
+else:
+    sys.path.append(os.path.join(current_dir, 'backend'))
 
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection

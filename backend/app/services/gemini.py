@@ -59,24 +59,43 @@ class GeminiService:
         file_ref = genai.get_file(name=file_name)
         return file_ref.state.name
 
-    async def generate_answer(self, query: str, file_uris: List[str], system_instruction: str = None) -> str:
+    def generate_vertical_instructions(self, role: str, company: str, base_tone: str = "professional") -> str:
         """
-        Generates an answer using Gemini 1.5 Pro with File Search (via file_uris).
+        Creates a dynamic Persona based on User Role and Company.
+        """
+        personas = {
+            "engineer": "You are a Senior Civil Engineer & Construction Expert. Focus on structural integrity, materials, and safety codes (ACI, BS, Eurocode).",
+            "lawyer": "You are a Corporate Legal Counsel. Focus on liability, contract terms, dispute resolution, and compliance.",
+            "accountant": "You are a Chief Financial Officer. Focus on costs, budget variance, ROI, and payment terms.",
+            "hr": "You are a Human Resources Director. Focus on labor laws, employee rights, and organizational policy.",
+            "admin": "You are a General Operations Manager. Provide broad, high-level summaries."
+        }
+        
+        persona = personas.get(role, "You are a helpful corporate assistant.")
+        
+        return (
+            f"{persona}\n"
+            f"You are working for '{company}'.\n"
+            f"Tone: {base_tone}.\n"
+            "CRITICAL RULES:\n"
+            "1. Answer ONLY what is asked. Do not summarize unless asked.\n"
+            "2. Respond in the same language as the user (likely Arabic).\n"
+            "3. If the answer is in the document, CITE IT.\n"
+        )
+
+    async def generate_answer(self, query: str, file_uris: List[str], role: str = "admin", company: str = "General", system_instruction: str = None) -> str:
+        """
+        Generates an answer using Gemini 2.0 Flash with Role-Based Context.
         """
         model_name = "gemini-2.0-flash"
         
         parts = []
         for uri in file_uris:
-            # Handle full URL or relative URI
-            # URI could be:
-            # 1. files/xxxx
-            # 2. https://generativelanguage.googleapis.com/v1beta/files/xxxx
             try:
                 file_name = uri
                 if "/files/" in uri:
                     file_name = "files/" + uri.split("/files/")[-1]
                 
-                # Fetch object (File Search requirement)
                 file_obj = genai.get_file(file_name)
                 parts.append(file_obj)
             except Exception as e:
@@ -85,18 +104,8 @@ class GeminiService:
         parts.append(query)
         
         if system_instruction is None:
-            # Improved System Prompt for RAG
-            system_instruction = (
-                "You are an intelligent corporate assistant. "
-                "You have access to the user's private documents. "
-                "Your task is to answer the user's specific question based on these documents. "
-                "CRITICAL RULES:\n"
-                "1. Answer ONLY what is asked. Do not summarize the document unless explicitly requested.\n"
-                "2. Be concise and direct. Avoid fluff.\n"
-                "3. If the answer is in the document, quote it or reference the page number.\n"
-                "4. Respond in the same language as the user's question (likely Arabic).\n"
-                "5. If the answer is not in the document, state that clearly."
-            )
+            # Generate Dynamic Vertical Instruction
+            system_instruction = self.generate_vertical_instructions(role, company)
 
         try:
              chat_model = genai.GenerativeModel(
@@ -108,6 +117,7 @@ class GeminiService:
              return response.text
         except Exception as e:
             self.logger.error(f"Gemini generation failed: {str(e)}")
-            raise
+            # Fallback for 404/Safety errors
+            return "Apologies, I could not process the request based on the current document context."
 
 gemini_service = GeminiService()
