@@ -17,14 +17,24 @@ async def upload_document(
     """
     Upload a document for the current tenant.
     """
-    # 1. Resolve Tenant
-    # In earlier steps we established tenant resolution by Name
-    stmt = select(Tenant).where(Tenant.company_name == "Construction Corp") # FIXME: Use tenant_name from dependency properly in prod
+    # 1. Resolve Tenant (Lazy Seed)
+    # Use the header value, or fall back to "Construction Corp" if generic
+    target_name = tenant_name if tenant_name else "Construction Corp"
+    
+    stmt = select(Tenant).where(Tenant.company_name == target_name)
     result = await db.execute(stmt)
     tenant = result.scalars().first()
     
+    # Auto-create (Lazy Seeding) if missing - preventing "Tenant not found" in demos
     if not tenant:
-        raise HTTPException(status_code=404, detail="Tenant not found")
+        tenant = Tenant(
+            company_name=target_name,
+            subscription_status=True,
+            subscribed_modules=["finance", "engineer"]
+        )
+        db.add(tenant)
+        await db.commit()
+        await db.refresh(tenant)
 
     # 2. Upload Document
     document = await rag_service.upload_document(db, file, tenant.id)
