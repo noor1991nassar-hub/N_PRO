@@ -24,7 +24,7 @@ async def trigger_extraction(
     # In real app, check if document belongs to tenant
     
     print(f"--- TRIGGERING EXTRACTION FOR DOC ID: {document_id} ---")
-    background_tasks.add_task(finance_extractor.process_document, db, document_id)
+    background_tasks.add_task(finance_extractor.process_document, document_id)
     return {"message": "Extraction started", "status": "processing"}
 
 @router.get("/invoices")
@@ -52,7 +52,10 @@ async def list_invoices(
         await db.commit()
         await db.refresh(tenant)
 
-    stmt = select(FinanceInvoice).where(FinanceInvoice.tenant_id == tenant.id).options(selectinload(FinanceInvoice.vendor))
+    stmt = select(FinanceInvoice).where(FinanceInvoice.tenant_id == tenant.id).options(
+        selectinload(FinanceInvoice.vendor),
+        selectinload(FinanceInvoice.items)
+    )
     result = await db.execute(stmt)
     invoices = result.scalars().all()
     
