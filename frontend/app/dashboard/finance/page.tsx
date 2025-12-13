@@ -21,7 +21,9 @@ import {
     RefreshCw,
     CheckCircle,
     XCircle,
-    Cpu
+    Cpu,
+    PlusCircle,
+    MinusCircle
 } from "lucide-react";
 import { uploadFile, chatWithWorkspace, triggerExtraction, fetchInvoices } from '@/lib/api';
 
@@ -34,6 +36,19 @@ export default function FinanceDashboard() {
     const [errorMessage, setErrorMessage] = useState("");
     const [invoices, setInvoices] = useState<any[]>([]);
     const [activeTab, setActiveTab] = useState("dashboard");
+
+    // Expandable Rows State
+    const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+
+    const toggleRow = (id: number) => {
+        const next = new Set(expandedRows);
+        if (next.has(id)) {
+            next.delete(id);
+        } else {
+            next.add(id);
+        }
+        setExpandedRows(next);
+    };
 
     // Duplicate Handling State
     const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
