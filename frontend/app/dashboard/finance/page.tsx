@@ -75,13 +75,13 @@ export default function FinanceDashboard() {
             {/* 1. رأس الصفحة (Header) */}
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-                        <span className="p-2 bg-emerald-100 rounded-lg">
-                            <TrendingUp className="w-8 h-8 text-emerald-600" />
+                    <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+                        <span className="p-2 bg-emerald-100 dark:bg-emerald-900/20 rounded-lg">
+                            <TrendingUp className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
                         </span>
                         الإدارة المالية الذكية
                     </h1>
-                    <p className="text-slate-500 mt-2 mr-14">
+                    <p className="text-muted-foreground mt-2 mr-14">
                         نظام تدقيق ومعالجة الفواتير الآلي - CorporateMemory
                     </p>
                 </div>
@@ -103,7 +103,7 @@ export default function FinanceDashboard() {
             <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
 
                 {/* شريط التنقل */}
-                <TabsList className="grid w-full grid-cols-5 h-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm rounded-xl p-1">
+                <TabsList className="grid w-full grid-cols-5 h-14 bg-card border border-border shadow-sm rounded-xl p-1">
                     <TabsTrigger value="dashboard" className="data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 text-base gap-2">
                         <LayoutDashboard className="w-4 h-4" /> نظرة عامة
                     </TabsTrigger>
@@ -131,7 +131,7 @@ export default function FinanceDashboard() {
                     </div>
 
                     <Card className="h-[400px] flex items-center justify-center border-dashed">
-                        <p className="text-slate-400">هنا سيتم وضع الرسم البياني للتدفق النقدي (Cash Flow Chart)</p>
+                        <p className="text-muted-foreground">هنا سيتم وضع الرسم البياني للتدفق النقدي (Cash Flow Chart)</p>
                     </Card>
                 </TabsContent>
 
@@ -142,9 +142,9 @@ export default function FinanceDashboard() {
                             <CardTitle>أرشيف الملفات</CardTitle>
                             <CardDescription>إدارة ورفع الملفات المالية (PDF, Images, Excel).</CardDescription>
                         </CardHeader>
-                        <CardContent className="h-[400px] flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-lg m-6 bg-slate-50">
-                            <UploadCloud className="w-16 h-16 text-slate-300 mb-4" />
-                            <h3 className="text-lg font-medium text-slate-700">اسحب الملفات هنا للرفع</h3>
+                        <CardContent className="h-[400px] flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg m-6 bg-muted/20">
+                            <UploadCloud className="w-16 h-16 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-medium text-foreground">اسحب الملفات هنا للرفع</h3>
                             <div className="relative mt-4">
                                 <input type="file" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer" disabled={isUploading} />
                                 <Button disabled={isUploading}>{isUploading ? "جاري الرفع..." : "اختيار ملفات"}</Button>
@@ -162,9 +162,9 @@ export default function FinanceDashboard() {
                         </CardHeader>
                         <CardContent>
                             {invoices.length === 0 ? (
-                                <div className="rounded-md border p-8 text-center bg-slate-50">
-                                    <TableIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                                    <p className="text-slate-600">لا توجد بيانات مستخرجة بعد.</p>
+                                <div className="rounded-md border p-8 text-center bg-muted/20">
+                                    <TableIcon className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                                    <p className="text-muted-foreground">لا توجد بيانات مستخرجة بعد.</p>
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto">
