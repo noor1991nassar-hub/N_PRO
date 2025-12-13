@@ -1,6 +1,6 @@
 import json
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 from app.core.database import AsyncSessionLocal
 from app.models.document import Document
@@ -105,10 +105,15 @@ class FinanceExtractorService:
                     await db.flush()
                     await db.refresh(vendor)
                     
+
+
                 # B. Invoice Header
-                stmt = select(FinanceInvoice).where(FinanceInvoice.document_id == document_id).options(selectinload(FinanceInvoice.items))
+                # We don't need selectinload if we are just updating header and deleting items manually
+                stmt = select(FinanceInvoice).where(FinanceInvoice.document_id == document_id)
                 result = await db.execute(stmt)
                 existing_invoice = result.scalars().first()
+                
+                invoice_id = None
                 
                 if existing_invoice:
                      # Update existing
@@ -119,12 +124,14 @@ class FinanceExtractorService:
                      existing_invoice.vendor_id = vendor.id
                      existing_invoice.extraction_status = "completed"
                      
-                     # Clear old items to replace (SQLAlchemy delete-orphan will handle deletion)
-                     existing_invoice.items = []
+                     # Explicitly delete old items
+                     await db.execute(delete(FinanceInvoiceItem).where(FinanceInvoiceItem.invoice_id == existing_invoice.id))
+                     
+                     invoice_id = existing_invoice.id
                      invoice = existing_invoice
                 else:
                     from datetime import datetime
-                    # Parse Date if possible (Simple try/except)
+                    # Parse Date if possible
                     inv_date = None
                     if extracted_data.invoice_date:
                         try:
@@ -143,23 +150,21 @@ class FinanceExtractorService:
                         extraction_status="completed"
                     )
                     db.add(invoice)
-                    await db.flush()
+                    await db.flush() # Identify ID
+                    invoice_id = invoice.id
                 
                 # C. Line Items
-                # If we updated existing_invoice, .items is now empty list. We just append.
-                # If new invoice, .items is empty collection.
-                
                 for item in extracted_data.items:
-                    # Direct object creation is safer than appending to list if session is tricky
-                    # But appending to relation is more idiomatic
+                    # Explicit addition
                     db_item = FinanceInvoiceItem(
+                        invoice_id=invoice_id,
                         description=item.description,
                         quantity=item.quantity,
                         unit_price=item.unit_price,
                         total_price=item.total_price,
                         category=item.category
                     )
-                    invoice.items.append(db_item)
+                    db.add(db_item)
                     
                 await db.commit()
                 return invoice
