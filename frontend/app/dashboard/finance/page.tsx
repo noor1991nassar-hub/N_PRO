@@ -230,14 +230,14 @@ export default function FinanceDashboard() {
                                         {/* Step 2: AI Analysis */}
                                         <div className="flex items-center gap-3">
                                             <div className={`p-2 rounded-full ${status === 'analyzing' ? 'bg-amber-100 text-amber-600 animate-pulse' :
-                                                    status === 'success' ? 'bg-emerald-100 text-emerald-600' :
-                                                        status === 'error' ? 'bg-red-100 text-red-600' :
-                                                            'bg-slate-100 text-slate-400'
+                                                status === 'success' ? 'bg-emerald-100 text-emerald-600' :
+                                                    status === 'error' ? 'bg-red-100 text-red-600' :
+                                                        'bg-slate-100 text-slate-400'
                                                 }`}>
                                                 {status === 'analyzing' && <Cpu className="w-5 h-5 animate-spin-slow" />}
                                                 {status === 'success' && <CheckCircle className="w-5 h-5" />}
                                                 {status === 'error' && <XCircle className="w-5 h-5" />}
-                                                {(status === 'uploading' || status === 'idle') && <Cpu className="w-5 h-5" />}
+                                                {status === 'uploading' && <Cpu className="w-5 h-5" />}
                                             </div>
                                             <div>
                                                 <p className={`font-medium ${status === 'analyzing' ? 'text-amber-600' : 'text-foreground'}`}>
