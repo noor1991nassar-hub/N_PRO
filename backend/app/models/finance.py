@@ -34,10 +34,10 @@ class FinanceInvoice(Base):
     
     # Relations
     tenant = relationship("Tenant")
-    document = relationship("Document")
+    document = relationship("Document", back_populates="invoices")
     vendor = relationship("FinanceVendor", back_populates="invoices")
-    items = relationship("FinanceInvoiceItem", back_populates="invoice")
-    audit_logs = relationship("FinanceAuditFlag", back_populates="invoice")
+    items = relationship("FinanceInvoiceItem", back_populates="invoice", cascade="all, delete-orphan")
+    audit_logs = relationship("FinanceAuditFlag", back_populates="invoice", cascade="all, delete-orphan")
 
 class FinanceInvoiceItem(Base):
     __tablename__ = "finance_invoice_items"

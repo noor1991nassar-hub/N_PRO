@@ -23,6 +23,7 @@ class Document(Base):
     status = Column(String, default="indexing")
     
     tenant = relationship("Tenant", back_populates="documents")
+    invoices = relationship("FinanceInvoice", back_populates="document", cascade="all, delete-orphan")
 
     @property
     def title(self):
