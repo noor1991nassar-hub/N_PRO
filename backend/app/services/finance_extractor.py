@@ -66,8 +66,17 @@ class FinanceExtractorService:
             
             # 3. Clean & Parse JSON
             cleaned_text = response_text.replace("```json", "").replace("```", "").strip()
-            data_dict = json.loads(cleaned_text)
+            # Handle potential leading/trailing garbage (e.g. "Here is the JSON: { ... }")
+            if "{" in cleaned_text:
+                cleaned_text = cleaned_text[cleaned_text.find("{"):cleaned_text.rfind("}")+1]
             
+            try:
+                data_dict = json.loads(cleaned_text)
+            except json.JSONDecodeError:
+                logger.error(f"JSON Parsing Failed. Raw: {response_text}")
+                # Fallback failure - requires prompt tuning if frequent
+                raise ValueError("AI response was not valid JSON")
+
             # Use Pydantic for validation
             extracted_data = InvoiceExtract(**data_dict)
 
