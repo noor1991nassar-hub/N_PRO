@@ -132,7 +132,7 @@ export default function LoginPage() {
                         <form onSubmit={handleLogin} className="space-y-5">
 
                             <div className="space-y-2">
-                                <Label htmlFor="email">البريد الإلكتروني المهني</Label>
+                                <Label htmlFor="email" className="dark:text-white">البريد الإلكتروني المهني</Label>
                                 <div className="relative">
                                     <Briefcase className="absolute right-3 top-3 h-4 w-4 text-slate-400" />
                                     <Input
@@ -149,7 +149,7 @@ export default function LoginPage() {
 
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <Label htmlFor="password">كلمة المرور</Label>
+                                    <Label htmlFor="password" className="dark:text-white">كلمة المرور</Label>
                                     <a href="#" className="text-xs text-blue-600 hover:text-blue-500">نسيت كلمة المرور؟</a>
                                 </div>
                                 <div className="relative">
