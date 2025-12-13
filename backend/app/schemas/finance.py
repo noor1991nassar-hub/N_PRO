@@ -7,7 +7,7 @@ class InvoiceItemExtract(BaseModel):
     quantity: float = Field(..., description="Quantity of the item")
     unit_price: float = Field(..., description="Price per unit")
     total_price: float = Field(..., description="Total line price")
-    category: str = Field(..., description="Category of the item (e.g., Software, Hardware, Services)")
+    category: Optional[str] = Field(None, description="Category of the item (e.g., Software, Hardware, Services)")
 
 class InvoiceExtract(BaseModel):
     invoice_number: str = Field(..., description="The invoice number")
