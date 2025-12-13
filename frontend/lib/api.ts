@@ -5,12 +5,12 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1
 // Hardcoded for demo purposes
 const TENANT_ID = "Construction Corp"; // Updated to match Seed
 
-export async function uploadFile(file: File, onProgress?: (percent: number) => void) {
+export async function uploadFile(file: File, force: boolean = false, onProgress?: (percent: number) => void) {
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-        const res = await axios.post(`${API_URL}/app/document`, formData, {
+        const res = await axios.post(`${API_URL}/app/document?force=${force}`, formData, {
             headers: {
                 "X-Tenant-ID": TENANT_ID,
                 "Content-Type": "multipart/form-data",

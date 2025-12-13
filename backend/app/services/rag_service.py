@@ -13,12 +13,38 @@ UPLOAD_DIR = "backend/temp_uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 class RAGService:
-    async def upload_document(self, db: AsyncSession, file: UploadFile, tenant_id: int):
+    async def upload_document(self, db: AsyncSession, file: UploadFile, tenant_id: int, force: bool = False):
         """
         Vertical SaaS Upload:
         - Linked to Tenant (not Workspace).
         - Default Access: General (for now, can be parameterized).
         """
+        # 0. Check for Duplicates (Gemini Level)
+        # We check by filename for simplicity in this MVP
+        existing_file = await gemini_service.check_file_exists(file.filename)
+        
+        if existing_file:
+            if not force:
+                # Return 409 Conflict so Frontend can prompt user
+                raise HTTPException(
+                    status_code=409, 
+                    detail=f"File '{file.filename}' already exists.",
+                    headers={"X-Duplicate-Of": existing_file.name}
+                )
+            else:
+                # Force Overwrite: Delete old file from Gemini & DB
+                await gemini_service.delete_file(existing_file.name)
+                
+                # Clean up DB (Optional: Soft delete or reuse?)
+                # For strict sync, let's delete the old Document record if it matches this file_uri logic
+                stmt = select(Document).where(Document.file_uri == existing_file.uri)
+                result = await db.execute(stmt)
+                old_doc = result.scalars().first()
+                if old_doc:
+                    await db.delete(old_doc)
+                    await db.commit()
+        
+        # 1. Save locally
         # 1. Save locally
         file_ext = os.path.splitext(file.filename)[1]
         unique_filename = f"{uuid.uuid4()}{file_ext}"

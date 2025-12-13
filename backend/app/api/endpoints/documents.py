@@ -11,6 +11,7 @@ router = APIRouter()
 @router.post("/document")
 async def upload_document(
     file: UploadFile = File(...),
+    force: bool = False,
     db: AsyncSession = Depends(get_db),
     tenant_name: str = Depends(get_current_tenant_id),
 ):
@@ -37,7 +38,7 @@ async def upload_document(
         await db.refresh(tenant)
 
     # 2. Upload Document
-    document = await rag_service.upload_document(db, file, tenant.id)
+    document = await rag_service.upload_document(db, file, tenant.id, force=force)
     return {"id": document.id, "title": document.filename, "status": document.status}
 
 @router.get("/document")

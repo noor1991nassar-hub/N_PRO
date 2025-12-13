@@ -59,6 +59,33 @@ class GeminiService:
         file_ref = genai.get_file(name=file_name)
         return file_ref.state.name
 
+    async def check_file_exists(self, display_name: str) -> Optional[types.File]:
+        """
+        Checks if a file with the given display_name already exists in Gemini.
+        Returns the File object if found, None otherwise.
+        """
+        try:
+            # Note: list_files returns a generator. We iterate to find a match.
+            # Efficiency warning: If many files, this is slow. Gemini API doesn't support filter by name yet.
+            for f in genai.list_files():
+                if f.display_name == display_name:
+                    return f
+            return None
+        except Exception as e:
+            self.logger.error(f"Error checking file existence: {e}")
+            return None
+
+    async def delete_file(self, file_name: str):
+        """
+        Deletes a file from Gemini.
+        """
+        try:
+            genai.delete_file(file_name)
+            self.logger.info(f"Deleted file from Gemini: {file_name}")
+        except Exception as e:
+            self.logger.error(f"Error deleting file: {e}")
+            raise
+
     def generate_vertical_instructions(self, role: str, company: str, base_tone: str = "professional") -> str:
         """
         Creates a dynamic Persona based on User Role and Company.
@@ -87,7 +114,7 @@ class GeminiService:
         """
         Generates an answer using Gemini 2.0 Flash with Role-Based Context.
         """
-        model_name = "gemini-1.5-flash"
+        model_name = "gemini-2.0-flash"
         
         parts = []
         for uri in file_uris:
