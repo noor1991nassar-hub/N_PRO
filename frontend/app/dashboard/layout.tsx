@@ -1,5 +1,3 @@
-import { Sidebar } from "@/components/layout/Sidebar"
-
 export default function DashboardLayout({
     children,
 }: {
@@ -7,7 +5,6 @@ export default function DashboardLayout({
 }) {
     return (
         <div className="flex h-screen w-full bg-background">
-            <Sidebar />
             <div className="flex flex-1 flex-col overflow-hidden">
                 <header className="flex h-16 items-center gap-4 border-b bg-background px-6">
                     <h2 className="text-lg font-semibold">مرحباً بك في مساحة العمل</h2>
