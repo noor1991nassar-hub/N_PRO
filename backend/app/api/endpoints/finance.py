@@ -23,6 +23,7 @@ async def trigger_extraction(
     # Verify Tenant Ownership (simplified)
     # In real app, check if document belongs to tenant
     
+    print(f"--- TRIGGERING EXTRACTION FOR DOC ID: {document_id} ---")
     background_tasks.add_task(finance_extractor.process_document, db, document_id)
     return {"message": "Extraction started", "status": "processing"}
 
@@ -35,12 +36,21 @@ async def list_invoices(
     Get Data Grid (Tab 3) Data.
     """
     # Resolve Tenant ID
-    stmt = select(Tenant).where(Tenant.company_name == "Construction Corp")
+    target_name = tenant_name if tenant_name else "Construction Corp"
+    stmt = select(Tenant).where(Tenant.company_name == target_name)
     result = await db.execute(stmt)
     tenant = result.scalars().first()
     
     if not tenant:
-         raise HTTPException(status_code=404, detail="Tenant not found.")
+        # Lazy Seed if missing (Consistency with Upload)
+        tenant = Tenant(
+            company_name=target_name,
+            subscription_status=True,
+            subscribed_modules=["finance", "engineer"]
+        )
+        db.add(tenant)
+        await db.commit()
+        await db.refresh(tenant)
 
     stmt = select(FinanceInvoice).where(FinanceInvoice.tenant_id == tenant.id).options(selectinload(FinanceInvoice.vendor))
     result = await db.execute(stmt)
