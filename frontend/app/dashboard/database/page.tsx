@@ -27,7 +27,7 @@ export default function DatabasePage() {
         setUploadProgress(0)
 
         try {
-            await uploadFile(file, (percent) => {
+            await uploadFile(file, false, (percent) => {
                 setUploadProgress(percent)
             })
             setUploadProgress(100)
