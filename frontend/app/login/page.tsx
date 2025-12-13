@@ -139,7 +139,7 @@ export default function LoginPage() {
                                         id="email"
                                         type="email"
                                         placeholder="name@company.com"
-                                        className="pr-10 h-11 bg-slate-50 dark:bg-slate-900/50"
+                                        className="pr-10 h-11 bg-slate-50 dark:bg-slate-900/50 dark:text-white"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
@@ -157,7 +157,7 @@ export default function LoginPage() {
                                     <Input
                                         id="password"
                                         type="password"
-                                        className="pr-10 h-11 bg-slate-50 dark:bg-slate-900/50"
+                                        className="pr-10 h-11 bg-slate-50 dark:bg-slate-900/50 dark:text-white"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
