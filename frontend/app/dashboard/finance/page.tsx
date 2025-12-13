@@ -17,7 +17,8 @@ import {
     Loader2,
     Database,
     Send,
-    User
+    User,
+    RefreshCw
 } from "lucide-react";
 import { uploadFile, chatWithWorkspace } from '@/lib/api';
 import axios from 'axios';
@@ -235,15 +236,25 @@ export default function FinanceDashboard() {
                 {/* --- التاب 3: سجل البيانات (Data Grid) --- */}
                 <TabsContent value="datagrid">
                     <Card>
-                        <CardHeader>
-                            <CardTitle>البيانات المستخرجة</CardTitle>
-                            <CardDescription>جدول تفاعلي بجميع البنود المستخرجة من الفواتير.</CardDescription>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>البيانات المستخرجة</CardTitle>
+                                <CardDescription>جدول تفاعلي بجميع البنود المستخرجة من الفواتير.</CardDescription>
+                            </div>
+                            <Button variant="outline" size="sm" onClick={() => fetchInvoices().then(setInvoices)} className="gap-2">
+                                <RefreshCw className="w-4 h-4" />
+                                تحديث البيانات
+                            </Button>
                         </CardHeader>
                         <CardContent>
                             {invoices.length === 0 ? (
                                 <div className="rounded-md border p-8 text-center bg-muted/20">
                                     <TableIcon className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                                    <p className="text-muted-foreground">لا توجد بيانات مستخرجة بعد.</p>
+                                    <p className="text-muted-foreground mb-4">لا توجد بيانات مستخرجة بعد.</p>
+                                    <Button variant="outline" onClick={() => fetchInvoices().then(setInvoices)}>
+                                        <RefreshCw className="w-4 h-4 mr-2" />
+                                        تحديث القائمة
+                                    </Button>
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto">
@@ -328,8 +339,8 @@ export default function FinanceDashboard() {
                                 {messages.map((msg, idx) => (
                                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-start' : 'justify-end'}`}>
                                         <div className={`max-w-[80%] rounded-lg p-3 ${msg.role === 'user'
-                                                ? 'bg-primary text-primary-foreground rounded-tr-none'
-                                                : 'bg-muted text-foreground rounded-tl-none border border-border'
+                                            ? 'bg-primary text-primary-foreground rounded-tr-none'
+                                            : 'bg-muted text-foreground rounded-tl-none border border-border'
                                             }`}>
                                             <div className="flex items-center gap-2 mb-1 opacity-70 text-xs">
                                                 {msg.role === 'user' ? <User className="w-3 h-3" /> : <Bot className="w-3 h-3" />}
