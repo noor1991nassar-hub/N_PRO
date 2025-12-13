@@ -49,11 +49,8 @@ class RAGService:
                     print(f"DEBUG: Deleting old DB doc {old_doc.id}")
                     await db.delete(old_doc)
                     await db.commit()
-                    print(f"DEBUG: Old doc deleted")
+                    print(f"DEBUG: Old DB doc deleted")
         
-        # 1. Save locally
-        
-        # 1. Save locally
         # 1. Save locally
         file_ext = os.path.splitext(file.filename)[1]
         unique_filename = f"{uuid.uuid4()}{file_ext}"
