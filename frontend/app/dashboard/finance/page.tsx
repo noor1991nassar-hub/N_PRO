@@ -357,6 +357,7 @@ export default function FinanceDashboard() {
                                     <table className="w-full text-sm text-right">
                                         <thead className="bg-slate-100 text-slate-700">
                                             <tr>
+                                                <th className="p-3 w-10"></th>
                                                 <th className="p-3">رقم الفاتورة</th>
                                                 <th className="p-3">المورد</th>
                                                 <th className="p-3">التاريخ</th>
@@ -366,17 +367,70 @@ export default function FinanceDashboard() {
                                         </thead>
                                         <tbody>
                                             {invoices.map((inv) => (
-                                                <tr key={inv.id} className="border-b hover:bg-slate-50">
-                                                    <td className="p-3 font-medium">{inv.invoice_number}</td>
-                                                    <td className="p-3">{inv.vendor?.name}</td>
-                                                    <td className="p-3">{new Date(inv.invoice_date).toLocaleDateString()}</td>
-                                                    <td className="p-3 font-bold">{inv.total_amount} {inv.currency}</td>
-                                                    <td className="p-3">
-                                                        <span className="px-2 py-1 rounded-full text-xs bg-emerald-100 text-emerald-700">
-                                                            {inv.extraction_status}
-                                                        </span>
-                                                    </td>
-                                                </tr>
+                                                <React.Fragment key={inv.id}>
+                                                    <tr className="border-b hover:bg-slate-50 cursor-pointer" onClick={() => toggleRow(inv.id)}>
+                                                        <td className="p-3 text-center">
+                                                            {expandedRows.has(inv.id) ? (
+                                                                <MinusCircle className="w-4 h-4 text-slate-400" />
+                                                            ) : (
+                                                                <PlusCircle className="w-4 h-4 text-slate-400" />
+                                                            )}
+                                                        </td>
+                                                        <td className="p-3 font-medium">{inv.invoice_number}</td>
+                                                        <td className="p-3">{inv.vendor?.name}</td>
+                                                        <td className="p-3">{new Date(inv.invoice_date).toLocaleDateString()}</td>
+                                                        <td className="p-3 font-bold">{inv.total_amount} {inv.currency}</td>
+                                                        <td className="p-3">
+                                                            <span className="px-2 py-1 rounded-full text-xs bg-emerald-100 text-emerald-700">
+                                                                {inv.extraction_status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                    {expandedRows.has(inv.id) && (
+                                                        <tr className="bg-slate-50/50">
+                                                            <td colSpan={6} className="p-4">
+                                                                <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+                                                                    <div className="bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-500 border-b">
+                                                                        تفاضيل البنود (Line Items)
+                                                                    </div>
+                                                                    <table className="w-full text-xs">
+                                                                        <thead className="bg-slate-50 text-slate-600">
+                                                                            <tr>
+                                                                                <th className="p-2 text-right">المنتج / الخدمة</th>
+                                                                                <th className="p-2 text-center">الكمية</th>
+                                                                                <th className="p-2 text-center">سعر الوحدة</th>
+                                                                                <th className="p-2 text-center">الإجمالي</th>
+                                                                                <th className="p-2 text-right">الفئة</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                            {inv.items?.map((item: any, idx: number) => (
+                                                                                <tr key={idx} className="border-b last:border-0 hover:bg-slate-50">
+                                                                                    <td className="p-2 font-medium">{item.description}</td>
+                                                                                    <td className="p-2 text-center">{item.quantity}</td>
+                                                                                    <td className="p-2 text-center">{item.unit_price}</td>
+                                                                                    <td className="p-2 text-center font-bold">{item.total_price}</td>
+                                                                                    <td className="p-2">
+                                                                                        <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px]">
+                                                                                            {item.category || "General"}
+                                                                                        </span>
+                                                                                    </td>
+                                                                                </tr>
+                                                                            ))}
+                                                                            {(!inv.items || inv.items.length === 0) && (
+                                                                                <tr>
+                                                                                    <td colSpan={5} className="p-4 text-center text-slate-400 italic">
+                                                                                        لا توجد بنود مفصلة لهذه الفاتورة.
+                                                                                    </td>
+                                                                                </tr>
+                                                                            )}
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </React.Fragment>
                                             ))}
                                         </tbody>
                                     </table>
