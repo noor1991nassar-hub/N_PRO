@@ -1,6 +1,7 @@
 import json
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from app.models.document import Document
 from app.models.finance import FinanceInvoice, FinanceInvoiceItem, FinanceVendor
 from app.services.gemini import gemini_service
@@ -72,6 +73,8 @@ class FinanceExtractorService:
             
             try:
                 data_dict = json.loads(cleaned_text)
+                logger.info(f"AI Extraction Success. Items count: {len(data_dict.get('items', []))}")
+                print(f"DEBUG: Extracted {len(data_dict.get('items', []))} items: {data_dict.get('items')}")
             except json.JSONDecodeError:
                 logger.error(f"JSON Parsing Failed. Raw: {response_text}")
                 # Fallback failure - requires prompt tuning if frequent
@@ -98,21 +101,22 @@ class FinanceExtractorService:
                 await db.refresh(vendor)
                 
             # B. Invoice Header
-            # Check for duplicates first? For now, we assume unique extraction request per doc or update existing?
-            # Let's check if invoice exists for this document
-            stmt = select(FinanceInvoice).where(FinanceInvoice.document_id == document_id)
+            stmt = select(FinanceInvoice).where(FinanceInvoice.document_id == document_id).options(selectinload(FinanceInvoice.items))
             result = await db.execute(stmt)
             existing_invoice = result.scalars().first()
             
             if existing_invoice:
-                 # Update existing ?? OR Delete old?
-                 # Let's just update header
+                 # Update existing
                  existing_invoice.total_amount = extracted_data.total_amount
                  existing_invoice.invoice_number = extracted_data.invoice_number
+                 existing_invoice.invoice_date = extracted_data.invoice_date
+                 existing_invoice.currency = extracted_data.currency
                  existing_invoice.vendor_id = vendor.id
+                 existing_invoice.extraction_status = "completed"
+                 
+                 # Clear old items to replace (SQLAlchemy delete-orphan will handle deletion)
+                 existing_invoice.items = []
                  invoice = existing_invoice
-                 # Clear old items to replace
-                 # (Not implemented efficiently here, ideally delete * from items where invoice_id=...)
             else:
                 from datetime import datetime
                 # Parse Date if possible (Simple try/except)
@@ -137,24 +141,28 @@ class FinanceExtractorService:
                 await db.flush()
             
             # C. Line Items
+            # If we updated existing_invoice, .items is now empty list. We just append.
+            # If new invoice, .items is empty collection.
+            
             for item in extracted_data.items:
+                # Direct object creation is safer than appending to list if session is tricky
+                # But appending to relation is more idiomatic
                 db_item = FinanceInvoiceItem(
-                    invoice_id=invoice.id,
                     description=item.description,
                     quantity=item.quantity,
                     unit_price=item.unit_price,
                     total_price=item.total_price,
                     category=item.category
                 )
-                db.add(db_item)
+                invoice.items.append(db_item)
                 
             await db.commit()
             return invoice
             
         except Exception as e:
             logger.error(f"Extraction Failed: {e}")
-            # Update Document status?
-            # Not implemented in this snippet
+            import traceback
+            traceback.print_exc()
             return None
 
 finance_extractor = FinanceExtractorService()
