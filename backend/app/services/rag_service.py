@@ -33,16 +33,25 @@ class RAGService:
                 )
             else:
                 # Force Overwrite: Delete old file from Gemini & DB
-                await gemini_service.delete_file(existing_file.name)
-                
+                print(f"DEBUG: Force Overwrite triggered for {existing_file.name}")
+                try:
+                    await gemini_service.delete_file(existing_file.name)
+                    print(f"DEBUG: Gemini file deleted")
+                except Exception as e:
+                    print(f"DEBUG: Gemini delete failed (ignoring): {e}")
+
                 # Clean up DB (Optional: Soft delete or reuse?)
                 # For strict sync, let's delete the old Document record if it matches this file_uri logic
                 stmt = select(Document).where(Document.file_uri == existing_file.uri)
                 result = await db.execute(stmt)
                 old_doc = result.scalars().first()
                 if old_doc:
+                    print(f"DEBUG: Deleting old DB doc {old_doc.id}")
                     await db.delete(old_doc)
                     await db.commit()
+                    print(f"DEBUG: Old doc deleted")
+        
+        # 1. Save locally
         
         # 1. Save locally
         # 1. Save locally
