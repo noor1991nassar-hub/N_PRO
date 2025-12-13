@@ -52,7 +52,6 @@ class RAGService:
                     
                     if old_doc:
                         doc_id = old_doc.id
-                        print(f"DEBUG: Found old doc {doc_id}, executing RAW SQL delete")
                         
                         # Use text() for raw SQL to guarantee execution order and visibility
                         await db.execute(text("DELETE FROM finance_invoice_items WHERE invoice_id IN (SELECT id FROM finance_invoices WHERE document_id = :did)"), {"did": doc_id})
@@ -61,7 +60,6 @@ class RAGService:
                         await db.execute(text("DELETE FROM documents WHERE id = :did"), {"did": doc_id})
                         
                         await db.commit()
-                        print(f"DEBUG: Force Overwrite Complete (Raw SQL)")
                 except Exception as e:
                     print(f"DEBUG: DB Delete failed: {e}")
                     await db.rollback()
