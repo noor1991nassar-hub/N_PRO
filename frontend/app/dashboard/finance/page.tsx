@@ -92,7 +92,7 @@ export default function FinanceDashboard() {
             await triggerExtraction(doc.id);
 
             // Artificial delay to let user see the "Analyzing" state for a moment
-            await new Promise(r => setTimeout(r, 1500));
+            await new Promise(r => setTimeout(r, 300));
 
             setStatus('success');
             setTimeout(() => {
