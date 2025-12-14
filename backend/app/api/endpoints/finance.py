@@ -129,4 +129,39 @@ async def seed_bank_transactions(
     result = await db.execute(stmt)
     tenant = result.scalars().first()
     
+    
     return await reconciliation_service.create_dummy_bank_transactions(db, tenant.id)
+
+# --- Tax (ZATCA) Endpoints ---
+from app.services.tax_service import tax_service
+from pydantic import BaseModel
+
+class VATRequest(BaseModel):
+    start_date: str
+    end_date: str
+
+@router.post("/tax/generate")
+async def generate_tax_report(
+    payload: VATRequest,
+    db: AsyncSession = Depends(get_db),
+    tenant_name: str = Depends(get_current_tenant_id),
+):
+    target_name = tenant_name if tenant_name else "Construction Corp"
+    stmt = select(Tenant).where(Tenant.company_name == target_name)
+    result = await db.execute(stmt)
+    tenant = result.scalars().first()
+    
+    return await tax_service.generate_vat_report(db, tenant.id, payload.start_date, payload.end_date)
+
+@router.get("/tax/history")
+async def get_tax_history(
+    db: AsyncSession = Depends(get_db),
+    tenant_name: str = Depends(get_current_tenant_id),
+):
+    target_name = tenant_name if tenant_name else "Construction Corp"
+    stmt = select(Tenant).where(Tenant.company_name == target_name)
+    result = await db.execute(stmt)
+    tenant = result.scalars().first()
+    if not tenant: return []
+
+    return await tax_service.get_history(db, tenant.id)

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Text, Boolean
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Text, Boolean, func
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -102,3 +102,25 @@ class FinanceAuditFlag(Base):
     is_resolved = Column(Boolean, default=False)
     
     invoice = relationship("FinanceInvoice", back_populates="audit_logs")
+
+class VATReport(Base):
+    __tablename__ = "vat_reports"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"))
+    
+    period_start = Column(DateTime)
+    period_end = Column(DateTime)
+    
+    total_sales = Column(Float)
+    total_sales_vat = Column(Float) # Output Tax
+    
+    total_purchases = Column(Float)
+    total_purchases_vat = Column(Float) # Input Tax
+    
+    net_vat_payable = Column(Float) # The amount to pay to ZATCA
+    
+    status = Column(String, default="Draft") # Draft, Submitted, Paid
+    generated_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    tenant = relationship("Tenant")
