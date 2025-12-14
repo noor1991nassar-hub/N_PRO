@@ -76,7 +76,22 @@ export default function FinanceDashboard() {
         }
     };
 
-    // ... (rest of code)
+    // Expandable Rows State
+    const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+
+    const toggleRow = (id: number) => {
+        const next = new Set(expandedRows);
+        if (next.has(id)) {
+            next.delete(id);
+        } else {
+            next.add(id);
+        }
+        setExpandedRows(next);
+    };
+
+    // Duplicate Handling State
+    const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
+    const [pendingFile, setPendingFile] = useState<File | null>(null);
 
     // Load Data on Tab Change or Mount
     useEffect(() => {
