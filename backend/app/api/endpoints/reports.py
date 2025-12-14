@@ -56,13 +56,37 @@ def get_financial_statements(
         .filter(ChartOfAccounts.account_type == "Liability")\
         .scalar() or 0
 
+    # 4. Calculate Cash Flow (Simplified)
+    # Operating CF = Net Income (simplified)
+    net_income = revenue - expenses
+    operating_cash_flow = net_income
+    
+    # Investing CF = Purcahse of Fixed Assets (Code 1400) -> Outflow (Negative)
+    investing_cash_flow = db.query(func.sum(FinanceInvoiceItem.total_price))\
+        .join(ChartOfAccounts, FinanceInvoiceItem.gl_code == ChartOfAccounts.code)\
+        .join(FinanceInvoice)\
+        .filter(ChartOfAccounts.code == "1400")\
+        .filter(FinanceInvoice.invoice_date >= start_date)\
+        .scalar() or 0
+    investing_cash_flow = -investing_cash_flow
+    
+    # Financing CF (Zero for now)
+    financing_cash_flow = 0
+    
+    net_cash_change = operating_cash_flow + investing_cash_flow + financing_cash_flow
+
     return {
-        "net_income": revenue - expenses,
+        "net_income": net_income,
         "revenue": revenue,
         "expenses": expenses,
         "total_assets": assets,
         "total_liabilities": liabilities,
-        "equity": assets - liabilities 
+        "equity": assets - liabilities,
+        "cash_flow": {
+            "operating": operating_cash_flow,
+            "investing": investing_cash_flow,
+            "net_change": net_cash_change
+        }
     }
 
 # --- Zone 3: Entity Explorer Data ---

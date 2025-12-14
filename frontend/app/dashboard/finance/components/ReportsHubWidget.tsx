@@ -38,7 +38,12 @@ export function ReportsHubWidget() {
     };
 
     // Mock Data (Replace with fetch from API later)
-    const stats = { net_income: 45000, assets: 120000, liabilities: 30000 };
+    const stats = {
+        net_income: 45000,
+        assets: 120000,
+        liabilities: 30000,
+        cash_flow: { net_change: 15400 }
+    };
     const entities = [
         { id: 1, name: "مكتبة جرير", balance_due: 1200, status: "Active" },
         { id: 2, name: "شركة الكهرباء", balance_due: 450, status: "Active" },
@@ -90,7 +95,12 @@ export function ReportsHubWidget() {
                 <ReportCard title="ميزان المراجعة" value="متوازن ✅" desc="آخر تحديث: الآن" color="bg-blue-50 text-blue-700" />
                 <ReportCard title="قائمة الدخل" value={`SAR ${stats.net_income.toLocaleString()}`} desc="صافي الأرباح" color="bg-emerald-50 text-emerald-700" />
                 <ReportCard title="الميزانية العمومية" value={`SAR ${stats.assets.toLocaleString()}`} desc="إجمالي الأصول" color="bg-purple-50 text-purple-700" />
-                <ReportCard title="تقرير الضرائب" value="SAR 9,200" desc="مستحق للدفع" color="bg-amber-50 text-amber-700" />
+                <ReportCard
+                    title="التدفقات النقدية"
+                    value={`SAR ${stats.cash_flow?.net_change.toLocaleString() || '0'}`}
+                    desc="صافي السيولة النقدية"
+                    color="bg-orange-50 text-orange-700"
+                />
             </div>
 
             {/* --- Zone 3: Entity Explorer --- */}
