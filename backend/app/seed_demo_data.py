@@ -3,12 +3,24 @@
 
 import random
 from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
-from app.database import SessionLocal, engine
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.core.config import settings
+from app.core.database import Base
 from app.models import (
-    Base, Tenant, FinanceVendor, FinanceInvoice, FinanceInvoiceItem, 
+    Tenant, FinanceVendor, FinanceInvoice, FinanceInvoiceItem, 
     ChartOfAccounts, Employee, EmploymentContract, BankTransaction
 )
+
+# Setup Sync Engine for Seeding
+db_uri = settings.SQLALCHEMY_DATABASE_URI
+if "+aiosqlite" in db_uri:
+    db_uri = db_uri.replace("+aiosqlite", "")
+elif "+asyncpg" in db_uri:
+    db_uri = db_uri.replace("+asyncpg", "")
+
+engine = create_engine(db_uri)
+SessionLocal = sessionmaker(bind=engine)
 
 # تأكد أن الجداول موجودة
 Base.metadata.create_all(bind=engine)
