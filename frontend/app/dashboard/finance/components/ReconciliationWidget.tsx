@@ -101,5 +101,7 @@ export function ReconciliationWidget({ onReconcileComplete }: { onReconcileCompl
                         </table>
                     </div>
                 </div>
-                );
+            </CardContent>
+        </Card>
+    );
 }
