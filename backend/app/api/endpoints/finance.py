@@ -9,6 +9,28 @@ from sqlalchemy.orm import selectinload
 
 router = APIRouter()
 
+
+# --- Helper: Tenant Resolution ---
+async def resolve_tenant(db: AsyncSession, tenant_name: str) -> Tenant | None:
+    target_name = tenant_name if tenant_name else "Finance Corp"
+    stmt = select(Tenant).where(Tenant.company_name == target_name)
+    result = await db.execute(stmt)
+    tenant = result.scalars().first()
+    
+    if not tenant:
+        # Lazy Seed if missing (special case for Finance Corp demo flow)
+        if target_name == "Finance Corp":
+             tenant = Tenant(
+                company_name=target_name,
+                subscription_status=True,
+                subscribed_modules=["finance", "hr"]
+            )
+             db.add(tenant)
+             await db.commit()
+             await db.refresh(tenant)
+    
+    return tenant
+
 @router.post("/extract/{document_id}")
 async def trigger_extraction(
     document_id: int,
@@ -20,9 +42,10 @@ async def trigger_extraction(
     Trigger AI Extraction for a Finance Document.
     Runs in background to avoid timeout.
     """
-    # Verify Tenant Ownership (simplified)
-    # In real app, check if document belongs to tenant
-    
+    tenant = await resolve_tenant(db, tenant_name)
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+        
     print(f"--- TRIGGERING EXTRACTION FOR DOC ID: {document_id} ---")
     background_tasks.add_task(finance_extractor.process_document, document_id)
     return {"message": "Extraction started", "status": "processing"}
@@ -35,22 +58,8 @@ async def list_invoices(
     """
     Get Data Grid (Tab 3) Data.
     """
-    # Resolve Tenant ID
-    target_name = tenant_name if tenant_name else "Finance Corp"
-    stmt = select(Tenant).where(Tenant.company_name == target_name)
-    result = await db.execute(stmt)
-    tenant = result.scalars().first()
-    
-    if not tenant:
-        # Lazy Seed if missing (Consistency with Upload)
-        tenant = Tenant(
-            company_name=target_name,
-            subscription_status=True,
-            subscribed_modules=["finance", "engineer"]
-        )
-        db.add(tenant)
-        await db.commit()
-        await db.refresh(tenant)
+    tenant = await resolve_tenant(db, tenant_name)
+    if not tenant: return []
 
     stmt = select(FinanceInvoice).where(FinanceInvoice.tenant_id == tenant.id).options(
         selectinload(FinanceInvoice.vendor),
@@ -85,11 +94,7 @@ async def get_financial_summary(
     db: AsyncSession = Depends(get_db),
     tenant_name: str = Depends(get_current_tenant_id),
 ):
-    # Resolve Tenant ID
-    target_name = tenant_name if tenant_name else "Finance Corp"
-    stmt = select(Tenant).where(Tenant.company_name == target_name)
-    result = await db.execute(stmt)
-    tenant = result.scalars().first()
+    tenant = await resolve_tenant(db, tenant_name)
     if not tenant: return {}
 
     return await analytics_service.get_financial_summary(db, tenant.id)
@@ -99,10 +104,7 @@ async def get_accountant_tasks(
     db: AsyncSession = Depends(get_db),
     tenant_name: str = Depends(get_current_tenant_id),
 ):
-    target_name = tenant_name if tenant_name else "Finance Corp"
-    stmt = select(Tenant).where(Tenant.company_name == target_name)
-    result = await db.execute(stmt)
-    tenant = result.scalars().first()
+    tenant = await resolve_tenant(db, tenant_name)
     if not tenant: return []
 
     return await analytics_service.get_accountant_tasks(db, tenant.id)
@@ -112,10 +114,8 @@ async def run_auto_reconciliation(
     db: AsyncSession = Depends(get_db),
     tenant_name: str = Depends(get_current_tenant_id),
 ):
-    target_name = tenant_name if tenant_name else "Construction Corp"
-    stmt = select(Tenant).where(Tenant.company_name == target_name)
-    result = await db.execute(stmt)
-    tenant = result.scalars().first()
+    tenant = await resolve_tenant(db, tenant_name)
+    if not tenant: raise HTTPException(status_code=404, detail="Tenant not found")
     
     return await reconciliation_service.auto_reconcile(db, tenant.id)
 
@@ -124,11 +124,8 @@ async def seed_bank_transactions(
     db: AsyncSession = Depends(get_db),
     tenant_name: str = Depends(get_current_tenant_id),
 ):
-    target_name = tenant_name if tenant_name else "Construction Corp"
-    stmt = select(Tenant).where(Tenant.company_name == target_name)
-    result = await db.execute(stmt)
-    tenant = result.scalars().first()
-    
+    tenant = await resolve_tenant(db, tenant_name)
+    if not tenant: raise HTTPException(status_code=404, detail="Tenant not found")
     
     return await reconciliation_service.create_dummy_bank_transactions(db, tenant.id)
 
@@ -146,10 +143,8 @@ async def generate_tax_report(
     db: AsyncSession = Depends(get_db),
     tenant_name: str = Depends(get_current_tenant_id),
 ):
-    target_name = tenant_name if tenant_name else "Construction Corp"
-    stmt = select(Tenant).where(Tenant.company_name == target_name)
-    result = await db.execute(stmt)
-    tenant = result.scalars().first()
+    tenant = await resolve_tenant(db, tenant_name)
+    if not tenant: raise HTTPException(status_code=404, detail="Tenant not found")
     
     return await tax_service.generate_vat_report(db, tenant.id, payload.start_date, payload.end_date)
 
@@ -158,10 +153,7 @@ async def get_tax_history(
     db: AsyncSession = Depends(get_db),
     tenant_name: str = Depends(get_current_tenant_id),
 ):
-    target_name = tenant_name if tenant_name else "Construction Corp"
-    stmt = select(Tenant).where(Tenant.company_name == target_name)
-    result = await db.execute(stmt)
-    tenant = result.scalars().first()
+    tenant = await resolve_tenant(db, tenant_name)
     if not tenant: return []
 
     return await tax_service.get_history(db, tenant.id)
