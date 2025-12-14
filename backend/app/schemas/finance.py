@@ -8,6 +8,8 @@ class InvoiceItemExtract(BaseModel):
     unit_price: float = Field(..., description="Price per unit")
     total_price: float = Field(..., description="Total line price")
     category: Optional[str] = Field(None, description="Category of the item (e.g., Software, Hardware, Services)")
+    gl_code: Optional[str] = Field(None, description="GL Account Code (e.g., '5400')")
+    entry_type: Optional[str] = Field("Debit", description="Debit or Credit")
 
 class InvoiceExtract(BaseModel):
     invoice_number: str = Field(..., description="The invoice number")

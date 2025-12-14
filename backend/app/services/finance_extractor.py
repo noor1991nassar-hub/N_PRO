@@ -30,15 +30,23 @@ class FinanceExtractorService:
                 if not document or not document.file_uri:
                     raise ValueError("Document not found or not indexed in Gemini.")
 
-                # 2. Call AI (Arabic Prompt)
+                # 2. Call AI (CPA Persona / GL Coding)
                 prompt = """
-                أنت محاسب خبير ومدخل بيانات دقيق. 
-                المهمة: استخرج البيانات من صورة/ملف الفاتورة المرفق بدقة 100%.
+                You are an expert Certified Public Accountant (CPA).
+                Analyze the attached invoice image and extract data into JSON.
                 
-                ركز بشكل خاص على "جدول البنود" (Line Items Table). يجب استخراج **جميع الصفوف** الموجودة في الجدول.
-                انتبه: الجدول قد يكون باللغة العربية (من اليمين لليسار). الأعمدة عادة تشمل: الصنف/البيان، الكمية، السعر الافرادي، الإجمالي.
+                CRITICAL TASK: For each line item, assign the correct "GL Account Code" from the list below based on the nature of the item.
                 
-                المطلوب منك إخراج البيانات بصيغة JSON فقط تتبع هذا الهيكل:
+                Chart of Accounts Reference:
+                - 1400: Fixed Assets (Use for: Laptops, Furniture, Machinery, Vehicles)
+                - 5000: Cost of Goods Sold (Use for: Raw materials, items for resale)
+                - 5100: Salaries (Use for: Labor, Wages)
+                - 5200: Rent Expense (Use for: Office rent)
+                - 5300: Utilities (Use for: Electricity, Internet, Phone)
+                - 5400: Marketing (Use for: Ads, Social Media, Printing)
+                - 5500: General Admin (Use for: Office supplies, Coffee, Cleaning)
+
+                JSON Output Format:
                 {
                     "vendor_name": "string",
                     "vendor_tax_id": "string",
@@ -52,15 +60,16 @@ class FinanceExtractorService:
                             "quantity": float,
                             "unit_price": float,
                             "total_price": float,
-                            "category": "string (مهم: حاول تصنيف البند، مثال: 'صيانة', 'أثاث', 'تسويق', 'زهور')"
+                            "gl_code": "string (e.g., '1400' or '5400')", 
+                            "entry_type": "Debit",
+                            "category": "string (optional helper)"
                         }
                     ]
                 }
                 
-                ملاحظات هامة:
-                - إذا كان التاريخ هجرياً حوله لميلادي.
-                - تأكد من دقة الأرقام في البنود.
-                - لا تترك قائمة "items" فارغة إذا كان هناك جدول في الصورة.
+                Important:
+                - If the date is Hijri, convert to Gregorian.
+                - Ensure math is correct.
                 """
                 
                 response_text = await gemini_service.generate_answer(
@@ -68,7 +77,7 @@ class FinanceExtractorService:
                     file_uris=[document.file_uri],
                     role="accountant",
                     company="Unknown",
-                    system_instruction="You are a JSON-only extraction engine. Output ONLY raw JSON."
+                    system_instruction="You are a JSON-only CPA engine. Output ONLY raw JSON."
                 )
                 
                 # 3. Clean & Parse JSON
@@ -163,7 +172,9 @@ class FinanceExtractorService:
                         quantity=item.quantity,
                         unit_price=item.unit_price,
                         total_price=item.total_price,
-                        category=item.category
+                        category=item.category,
+                        gl_code=item.gl_code,      # New
+                        entry_type=item.entry_type # New
                     )
                     db.add(db_item)
                     

@@ -449,6 +449,8 @@ export default function FinanceDashboard() {
                                                                                 <th className="p-2 text-center">سعر الوحدة</th>
                                                                                 <th className="p-2 text-center">الإجمالي</th>
                                                                                 <th className="p-2 text-right">الفئة</th>
+                                                                                <th className="p-2 text-center">GL Code</th>
+                                                                                <th className="p-2 text-center">Type</th>
                                                                             </tr>
                                                                         </thead>
                                                                         <tbody>
@@ -462,6 +464,12 @@ export default function FinanceDashboard() {
                                                                                         <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px]">
                                                                                             {item.category || "General"}
                                                                                         </span>
+                                                                                    </td>
+                                                                                    <td className="p-2 text-center font-mono text-[10px] text-slate-500">
+                                                                                        {item.gl_code || "-"}
+                                                                                    </td>
+                                                                                    <td className="p-2 text-center text-[10px]">
+                                                                                        {item.entry_type || "-"}
                                                                                     </td>
                                                                                 </tr>
                                                                             ))}

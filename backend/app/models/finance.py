@@ -39,6 +39,18 @@ class FinanceInvoice(Base):
     items = relationship("FinanceInvoiceItem", back_populates="invoice", cascade="all, delete-orphan")
     audit_logs = relationship("FinanceAuditFlag", back_populates="invoice", cascade="all, delete-orphan")
 
+# --- New Model: The Standard Chart of Accounts ---
+class ChartOfAccounts(Base):
+    __tablename__ = "chart_of_accounts"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, unique=True, index=True) # e.g., "1000", "5100"
+    name = Column(String) # e.g., "Cash", "Rent Expense"
+    
+    # Type determines where it goes: "Balance Sheet" or "Income Statement"
+    # "Asset", "Liability", "Equity", "Revenue", "Expense"
+    account_type = Column(String) 
+
 class FinanceInvoiceItem(Base):
     __tablename__ = "finance_invoice_items"
     id = Column(Integer, primary_key=True, index=True)
@@ -49,6 +61,13 @@ class FinanceInvoiceItem(Base):
     unit_price = Column(Float)
     total_price = Column(Float)
     category = Column(String) # AI Classified (e.g., "Marketing", "Utilities")
+
+    # --- New Accounting Fields ---
+    # The AI will select the best GL Code for this item
+    gl_code = Column(String, ForeignKey("chart_of_accounts.code"), nullable=True) 
+    
+    # "Debit" or "Credit" (Expenses/Assets are usually Debit)
+    entry_type = Column(String, default="Debit") 
     
     invoice = relationship("FinanceInvoice", back_populates="items")
 
