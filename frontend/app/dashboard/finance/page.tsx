@@ -234,31 +234,31 @@ export default function FinanceDashboard() {
 
                 {/* شريط التنقل */}
                 <TabsList className="grid w-full grid-cols-9 h-14 bg-card border border-border shadow-sm rounded-xl p-1">
-                    <TabsTrigger value="dashboard" className="data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 text-xs md:text-sm gap-1 md:gap-2">
+                    <TabsTrigger value="dashboard" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-xs md:text-sm gap-1 md:gap-2 shadow-sm">
                         <LayoutDashboard className="w-4 h-4" /> <span className="hidden md:inline">لوحة القيادة</span>
                     </TabsTrigger>
-                    <TabsTrigger value="documents" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 text-xs md:text-sm gap-1 md:gap-2">
+                    <TabsTrigger value="documents" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs md:text-sm gap-1 md:gap-2 shadow-sm">
                         <UploadCloud className="w-4 h-4" /> <span className="hidden md:inline">الوثائق</span>
                     </TabsTrigger>
-                    <TabsTrigger value="datagrid" className="data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 text-xs md:text-sm gap-1 md:gap-2">
+                    <TabsTrigger value="datagrid" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-xs md:text-sm gap-1 md:gap-2 shadow-sm">
                         <TableIcon className="w-4 h-4" /> <span className="hidden md:inline">السجلات</span>
                     </TabsTrigger>
-                    <TabsTrigger value="reports" className="data-[state=active]:bg-pink-50 data-[state=active]:text-pink-700 text-xs md:text-sm gap-1 md:gap-2">
+                    <TabsTrigger value="reports" className="data-[state=active]:bg-pink-600 data-[state=active]:text-white text-xs md:text-sm gap-1 md:gap-2 shadow-sm">
                         <PieChart className="w-4 h-4" /> <span className="hidden md:inline">التقارير</span>
                     </TabsTrigger>
-                    <TabsTrigger value="reconciliation" className="data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 text-xs md:text-sm gap-1 md:gap-2">
+                    <TabsTrigger value="reconciliation" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-xs md:text-sm gap-1 md:gap-2 shadow-sm">
                         <CreditCard className="w-4 h-4" /> <span className="hidden md:inline">المطابقة</span>
                     </TabsTrigger>
-                    <TabsTrigger value="tax" className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 text-xs md:text-sm gap-1 md:gap-2">
+                    <TabsTrigger value="tax" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white text-xs md:text-sm gap-1 md:gap-2 shadow-sm">
                         <Landmark className="w-4 h-4" /> <span className="hidden md:inline">الضرائب</span>
                     </TabsTrigger>
-                    <TabsTrigger value="payroll" className="data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700 text-xs md:text-sm gap-1 md:gap-2">
+                    <TabsTrigger value="payroll" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white text-xs md:text-sm gap-1 md:gap-2 shadow-sm">
                         <Users className="w-4 h-4" /> <span className="hidden md:inline">الرواتب</span>
                     </TabsTrigger>
-                    <TabsTrigger value="audit" className="data-[state=active]:bg-red-50 data-[state=active]:text-red-700 text-xs md:text-sm gap-1 md:gap-2">
+                    <TabsTrigger value="audit" className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-xs md:text-sm gap-1 md:gap-2 shadow-sm">
                         <ShieldAlert className="w-4 h-4" /> <span className="hidden md:inline">المدقق</span>
                     </TabsTrigger>
-                    <TabsTrigger value="analyst" className="data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 text-xs md:text-sm gap-1 md:gap-2">
+                    <TabsTrigger value="analyst" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white text-xs md:text-sm gap-1 md:gap-2 shadow-sm">
                         <Bot className="w-4 h-4" /> <span className="hidden md:inline">المحلل</span>
                     </TabsTrigger>
                 </TabsList>
