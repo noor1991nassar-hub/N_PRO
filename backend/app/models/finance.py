@@ -14,6 +14,25 @@ class FinanceVendor(Base):
     tenant = relationship("Tenant")
     invoices = relationship("FinanceInvoice", back_populates="vendor")
 
+# --- 2. Bank Transactions (For Reconciliation) ---
+class BankTransaction(Base):
+    __tablename__ = "bank_transactions"
+    id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"))
+    
+    date = Column(DateTime)
+    description = Column(String)
+    amount = Column(Float) # Negative = Withdrawal
+    reference_number = Column(String, nullable=True)
+    
+    # Reconciliation Status
+    is_reconciled = Column(Boolean, default=False)
+    matched_invoice_id = Column(Integer, ForeignKey("finance_invoices.id"), nullable=True)
+    match_confidence = Column(Float, default=0.0) 
+
+    tenant = relationship("Tenant")
+    matched_invoice = relationship("FinanceInvoice")
+
 class FinanceInvoice(Base):
     __tablename__ = "finance_invoices"
     id = Column(Integer, primary_key=True, index=True)

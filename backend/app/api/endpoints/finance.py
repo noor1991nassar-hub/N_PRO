@@ -75,3 +75,58 @@ async def get_invoice_details(
         raise HTTPException(status_code=404, detail="Invoice not found")
         
     return invoice
+
+# --- New Analytics & Reconciliation Endpoints ---
+from app.services.analytics_service import analytics_service
+from app.services.reconciliation_service import reconciliation_service
+
+@router.get("/summary")
+async def get_financial_summary(
+    db: AsyncSession = Depends(get_db),
+    tenant_name: str = Depends(get_current_tenant_id),
+):
+    # Resolve Tenant (Reusable logic ideally, duplicated for speed here)
+    target_name = tenant_name if tenant_name else "Construction Corp"
+    stmt = select(Tenant).where(Tenant.company_name == target_name)
+    result = await db.execute(stmt)
+    tenant = result.scalars().first()
+    if not tenant: return {}
+
+    return await analytics_service.get_financial_summary(db, tenant.id)
+
+@router.get("/tasks")
+async def get_accountant_tasks(
+    db: AsyncSession = Depends(get_db),
+    tenant_name: str = Depends(get_current_tenant_id),
+):
+    target_name = tenant_name if tenant_name else "Construction Corp"
+    stmt = select(Tenant).where(Tenant.company_name == target_name)
+    result = await db.execute(stmt)
+    tenant = result.scalars().first()
+    if not tenant: return []
+
+    return await analytics_service.get_accountant_tasks(db, tenant.id)
+
+@router.post("/reconcile/run")
+async def run_auto_reconciliation(
+    db: AsyncSession = Depends(get_db),
+    tenant_name: str = Depends(get_current_tenant_id),
+):
+    target_name = tenant_name if tenant_name else "Construction Corp"
+    stmt = select(Tenant).where(Tenant.company_name == target_name)
+    result = await db.execute(stmt)
+    tenant = result.scalars().first()
+    
+    return await reconciliation_service.auto_reconcile(db, tenant.id)
+
+@router.post("/reconcile/seed")
+async def seed_bank_transactions(
+    db: AsyncSession = Depends(get_db),
+    tenant_name: str = Depends(get_current_tenant_id),
+):
+    target_name = tenant_name if tenant_name else "Construction Corp"
+    stmt = select(Tenant).where(Tenant.company_name == target_name)
+    result = await db.execute(stmt)
+    tenant = result.scalars().first()
+    
+    return await reconciliation_service.create_dummy_bank_transactions(db, tenant.id)
