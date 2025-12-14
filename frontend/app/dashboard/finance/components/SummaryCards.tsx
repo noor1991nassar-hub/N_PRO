@@ -9,7 +9,7 @@ export function SummaryCards({ data }: { data: any }) {
     const formatCurrency = (val: number) => (val || 0).toLocaleString() + " SAR";
 
     return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
             {/* 1. Documents */}
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

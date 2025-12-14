@@ -69,6 +69,16 @@ class AnalyticsService:
         res_pay = await db.execute(stmt_pay)
         stats["total_payroll_last_run"] = res_pay.scalar() or 0.0
 
+        # 7. Tasks: Count of pending tasks
+        # We can reuse get_accountant_tasks logic or just do a quick count of unrecon transactions + flagged invoices
+        stmt_unrec_count = select(func.count(BankTransaction.id)).where(BankTransaction.tenant_id == tenant_id, BankTransaction.is_reconciled == False)
+        unrec_count = (await db.execute(stmt_unrec_count)).scalar() or 0
+        
+        stmt_flag_count = select(func.count(FinanceInvoice.id)).where(FinanceInvoice.tenant_id == tenant_id, FinanceInvoice.audit_status != "clean")
+        flag_count = (await db.execute(stmt_flag_count)).scalar() or 0
+        
+        stats["pending_tasks_count"] = unrec_count + flag_count
+
         return stats
 
     async def get_accountant_tasks(self, db: AsyncSession, tenant_id: int):
