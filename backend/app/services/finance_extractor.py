@@ -1,13 +1,14 @@
 import json
+import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
+
 from app.core.database import AsyncSessionLocal
 from app.models.document import Document
 from app.models.finance import FinanceInvoice, FinanceInvoiceItem, FinanceVendor
 from app.services.gemini import gemini_service
 from app.schemas.finance import InvoiceExtract
-import logging
 
 logger = logging.getLogger(__name__)
 

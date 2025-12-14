@@ -1,10 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+
+// UI Components
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+// Icons
 import {
     LayoutDashboard,
     UploadCloud,
@@ -25,6 +29,8 @@ import {
     PlusCircle,
     MinusCircle
 } from "lucide-react";
+
+// API
 import { uploadFile, chatWithWorkspace, triggerExtraction, fetchInvoices } from '@/lib/api';
 
 // API Functions (Local/Prod aware via ENV)
