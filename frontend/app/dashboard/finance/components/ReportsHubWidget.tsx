@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 // Badge and ScrollArea removed as they are missing in UI components
 // Replaced with custom styling
 import { ArrowUpRight, ArrowDownLeft, Wallet, Building2, Calendar } from "lucide-react";
@@ -11,6 +12,8 @@ export function ReportsHubWidget() {
     const [period, setPeriod] = useState("this_year");
     const [entityType, setEntityType] = useState("vendors");
     const [selectedEntity, setSelectedEntity] = useState<any>(null);
+    const [customStart, setCustomStart] = useState("");
+    const [customEnd, setCustomEnd] = useState("");
 
     const getDateRangeLabel = (p: string) => {
         const now = new Date(); // In a real app key off server time, but client time is fine for UI label
@@ -51,15 +54,32 @@ export function ReportsHubWidget() {
                     <Calendar className="w-5 h-5 text-emerald-600" />
                     <span dir="ltr" className="font-mono">{getDateRangeLabel(period)}</span>
                 </h2>
-                <div className="flex gap-2">
-                    {["this_month", "this_quarter", "this_year"].map((p) => (
+                <div className="flex gap-2 items-center">
+                    {period === 'custom' && (
+                        <div className="flex items-center gap-2 ml-2 animate-in fade-in slide-in-from-left-4 duration-300">
+                            <Input
+                                type="date"
+                                value={customStart}
+                                onChange={(e) => setCustomStart(e.target.value)}
+                                className="w-36 h-9"
+                            />
+                            <span className="text-slate-400">-</span>
+                            <Input
+                                type="date"
+                                value={customEnd}
+                                onChange={(e) => setCustomEnd(e.target.value)}
+                                className="w-36 h-9"
+                            />
+                        </div>
+                    )}
+                    {["this_month", "this_quarter", "this_year", "custom"].map((p) => (
                         <Button
                             key={p}
                             variant={period === p ? "default" : "outline"}
                             onClick={() => setPeriod(p)}
                             className="text-sm"
                         >
-                            {p === "this_month" ? "هذا الشهر" : p === "this_quarter" ? "الربع الحالي" : "السنة الحالية"}
+                            {p === "this_month" ? "هذا الشهر" : p === "this_quarter" ? "الربع الحالي" : p === "this_year" ? "السنة الحالية" : "تخصيص"}
                         </Button>
                     ))}
                 </div>
