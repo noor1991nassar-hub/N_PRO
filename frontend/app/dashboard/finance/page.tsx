@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 // UI Components
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,14 +27,22 @@ import {
     XCircle,
     Cpu,
     PlusCircle,
-    MinusCircle
+    MinusCircle,
+    Plus
 } from "lucide-react";
 
 // API
-import { uploadFile, chatWithWorkspace, triggerExtraction, fetchInvoices } from '@/lib/api';
+import {
+    uploadFile, chatWithWorkspace, triggerExtraction, fetchInvoices,
+    getFinancialSummary, getAccountantTasks
+} from '@/lib/api';
 
-// API Functions (Local/Prod aware via ENV)
-
+// New Widgets
+import { SummaryCards } from "./components/SummaryCards";
+import { TaskWidget } from "./components/TaskWidget";
+import { ReconciliationWidget } from "./components/ReconciliationWidget";
+import { TaxWidget } from "./components/TaxWidget";
+import { PayrollWidget } from "./components/PayrollWidget";
 
 export default function FinanceDashboard() {
     const [status, setStatus] = useState<'idle' | 'uploading' | 'analyzing' | 'success' | 'error'>('idle');
@@ -42,6 +50,22 @@ export default function FinanceDashboard() {
     const [errorMessage, setErrorMessage] = useState("");
     const [invoices, setInvoices] = useState<any[]>([]);
     const [activeTab, setActiveTab] = useState("dashboard");
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Dashboard Data State
+    const [summaryData, setSummaryData] = useState<any>(null);
+    const [tasks, setTasks] = useState<any[]>([]);
+
+    const loadDashboardData = async () => {
+        try {
+            const sum = await getFinancialSummary();
+            setSummaryData(sum);
+            const tsks = await getAccountantTasks();
+            setTasks(tsks);
+        } catch (e) {
+            console.error("Failed to load dashboard data", e);
+        }
+    };
 
     // Expandable Rows State
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
@@ -60,10 +84,13 @@ export default function FinanceDashboard() {
     const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
     const [pendingFile, setPendingFile] = useState<File | null>(null);
 
-    // Load Data on Tab Change
+    // Load Data on Tab Change or Mount
     useEffect(() => {
         if (activeTab === "datagrid") {
             fetchInvoices().then(setInvoices).catch(console.error);
+        }
+        if (activeTab === "dashboard") {
+            loadDashboardData();
         }
     }, [activeTab]);
 
@@ -106,7 +133,6 @@ export default function FinanceDashboard() {
             const doc = await uploadFile(file, false, (percent) => {
                 setUploadProgress(percent);
             });
-            console.log("Uploaded:", doc);
 
             // 2. Trigger Extraction (AI Analysis)
             setStatus('analyzing');
@@ -120,6 +146,7 @@ export default function FinanceDashboard() {
                 setActiveTab("datagrid");
                 setStatus('idle');
                 setUploadProgress(0);
+                loadDashboardData(); // Refresh dashboard
             }, 1000);
 
         } catch (err: any) {
@@ -135,37 +162,6 @@ export default function FinanceDashboard() {
 
             setStatus('error');
             setErrorMessage(err.message || "فشل غير معروف في معالجة الملف");
-        }
-    };
-
-    const confirmOverwrite = async () => {
-        if (!pendingFile) return;
-
-        setShowDuplicateAlert(false);
-        setStatus('uploading');
-        setUploadProgress(0);
-
-        try {
-            // Force Upload
-            const doc = await uploadFile(pendingFile, true, (percent) => {
-                setUploadProgress(percent);
-            });
-
-            // Proceed as normal
-            setStatus('analyzing');
-            await triggerExtraction(doc.id);
-            await new Promise(r => setTimeout(r, 1500));
-            setStatus('success');
-            setTimeout(() => {
-                setActiveTab("datagrid");
-                setStatus('idle');
-                setUploadProgress(0);
-                setPendingFile(null);
-            }, 1000);
-
-        } catch (err: any) {
-            setStatus('error');
-            setErrorMessage(err.message);
         }
     };
 
@@ -187,8 +183,13 @@ export default function FinanceDashboard() {
             await triggerExtraction(doc.id);
 
             setStatus('success');
-            fetchInvoices().then(setInvoices);
-            setPendingFile(null);
+            setTimeout(() => {
+                setActiveTab("datagrid");
+                setStatus('idle');
+                setUploadProgress(0);
+                setPendingFile(null);
+                loadDashboardData();
+            }, 1000);
 
         } catch (error: any) {
             setStatus('error');
@@ -209,36 +210,33 @@ export default function FinanceDashboard() {
                         الإدارة المالية الذكية
                     </h1>
                     <p className="text-muted-foreground mt-2 mr-14">
-                        نظام تدقيق ومعالجة الفواتير الآلي - CorporateMemory
+                        نظام تدقيق ومعالجة الفواتير الآلي (ERP v2.0)
                     </p>
                 </div>
 
                 {/* أزرار إجراءات سريعة */}
                 <div className="flex gap-3">
-                    <Button variant="outline">تصدير تقرير شهري</Button>
-                    <div className="relative">
-                        <input type="file" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer" disabled={status !== 'idle'} />
-                        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2" disabled={status !== 'idle'}>
-                            {status !== 'idle' ? <Loader2 className="animate-spin w-4 h-4" /> : <UploadCloud className="w-4 h-4" />}
-                            رفع فواتير جديدة
-                        </Button>
-                    </div>
+                    <Button onClick={() => fileInputRef.current?.click()} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2" disabled={status !== 'idle'}>
+                        {status !== 'idle' ? <Loader2 className="animate-spin w-4 h-4" /> : <UploadCloud className="w-4 h-4" />}
+                        رفع فواتير جديدة
+                    </Button>
+                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" disabled={status !== 'idle'} accept=".pdf,.jpg,.jpeg,.png" />
                 </div>
             </div>
 
-            {/* 2. منطقة التابات الخمسة (The 5 Tabs) */}
+            {/* 2. منطقة التابات (Tabs) */}
             <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
 
                 {/* شريط التنقل */}
                 <TabsList className="grid w-full grid-cols-5 h-14 bg-card border border-border shadow-sm rounded-xl p-1">
                     <TabsTrigger value="dashboard" className="data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 text-base gap-2">
-                        <LayoutDashboard className="w-4 h-4" /> نظرة عامة
+                        <LayoutDashboard className="w-4 h-4" /> مركز القيادة
                     </TabsTrigger>
                     <TabsTrigger value="documents" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 text-base gap-2">
                         <UploadCloud className="w-4 h-4" /> مركز الوثائق
                     </TabsTrigger>
                     <TabsTrigger value="datagrid" className="data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 text-base gap-2">
-                        <TableIcon className="w-4 h-4" /> سجل البيانات
+                        <TableIcon className="w-4 h-4" /> السجلات المحاسبية
                     </TabsTrigger>
                     <TabsTrigger value="audit" className="data-[state=active]:bg-red-50 data-[state=active]:text-red-700 text-base gap-2">
                         <ShieldAlert className="w-4 h-4" /> المدقق الذكي
@@ -248,18 +246,35 @@ export default function FinanceDashboard() {
                     </TabsTrigger>
                 </TabsList>
 
-                {/* --- التاب 1: لوحة القيادة (Dashboard) --- */}
+                {/* --- التاب 1: لوحة القيادة (Dashboard - ERP View) --- */}
                 <TabsContent value="dashboard" className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                        <StatsCard title="إجمالي المصروفات" value="SAR 45,231.89" change="+20.1% من الشهر الماضي" icon={TrendingUp} />
-                        <StatsCard title="الفواتير المعلقة" value="12" change="3 تستحق الدفع غداً" icon={FileCheck} />
-                        <StatsCard title="مخالفات مكتشفة" value="2" change="تتطلب مراجعة فورية" icon={ShieldAlert} alert />
-                        <StatsCard title="الميزانية المتبقية" value="SAR 12,000" change="88% تم استهلاكه" icon={LayoutDashboard} />
+
+                    {/* Financial Summary */}
+                    <SummaryCards data={summaryData} />
+
+                    {/* Widgets Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[850px] md:h-[450px]">
+                        {/* Row 1, Col 1: Tasks */}
+                        <div className="h-full">
+                            <TaskWidget tasks={tasks} />
+                        </div>
+
+                        {/* Row 1, Col 2: Reconciliation */}
+                        <div className="h-full">
+                            <ReconciliationWidget onReconcileComplete={loadDashboardData} />
+                        </div>
+
+                        {/* Row 2, Col 1: Tax */}
+                        <div className="h-full">
+                            <TaxWidget />
+                        </div>
+
+                        {/* Row 2, Col 2: Payroll */}
+                        <div className="h-full">
+                            <PayrollWidget />
+                        </div>
                     </div>
 
-                    <Card className="h-[400px] flex items-center justify-center border-dashed">
-                        <p className="text-muted-foreground">هنا سيتم وضع الرسم البياني للتدفق النقدي (Cash Flow Chart)</p>
-                    </Card>
                 </TabsContent>
 
                 {/* --- التاب 2: مركز الوثائق (Documents) --- */}
@@ -277,8 +292,7 @@ export default function FinanceDashboard() {
                                         <UploadCloud className="w-12 h-12 text-muted-foreground mb-4" />
                                         <h3 className="text-lg font-medium text-foreground">اضغط أو اسحب الملف</h3>
                                         <div className="relative mt-4">
-                                            <input type="file" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
-                                            <Button>اختيار ملف</Button>
+                                            <Button onClick={() => fileInputRef.current?.click()}>اختيار ملف</Button>
                                         </div>
                                     </>
                                 )}
@@ -343,33 +357,6 @@ export default function FinanceDashboard() {
                                     <div>
                                         <p className="text-sm text-muted-foreground">إجمالي الملفات المعالجة</p>
                                         <h4 className="text-2xl font-bold">{invoices.length}</h4>
-                                    </div>
-                                </div>
-
-                                {/* Stat 2 */}
-                                <div className="flex items-center gap-4 p-4 border rounded-lg bg-card text-card-foreground">
-                                    <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
-                                        <TrendingUp className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">آخر ملف تمت إضافته</p>
-                                        <h4 className="text-base font-semibold truncate max-w-[200px]">
-                                            {invoices.length > 0 ? (invoices[0].invoice_number || "فاتورة جديدة") : "-"}
-                                        </h4>
-                                        <p className="text-xs text-muted-foreground">
-                                            {invoices.length > 0 && invoices[0].invoice_date ? new Date(invoices[0].invoice_date).toLocaleDateString() : "لا يوجد"}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Stat 3: Storage Used (Mock) */}
-                                <div className="flex items-center gap-4 p-4 border rounded-lg bg-card text-card-foreground">
-                                    <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full">
-                                        <Database className="w-6 h-6 text-green-600 dark:text-green-400" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">مساحة التخزين المستخدمة</p>
-                                        <h4 className="text-2xl font-bold">2.4 GB</h4>
                                     </div>
                                 </div>
                             </CardContent>
@@ -475,7 +462,7 @@ export default function FinanceDashboard() {
                                                                             ))}
                                                                             {(!inv.items || inv.items.length === 0) && (
                                                                                 <tr>
-                                                                                    <td colSpan={5} className="p-4 text-center text-slate-400 italic">
+                                                                                    <td colSpan={7} className="p-4 text-center text-slate-400 italic">
                                                                                         لا توجد بنود مفصلة لهذه الفاتورة.
                                                                                     </td>
                                                                                 </tr>
@@ -508,7 +495,6 @@ export default function FinanceDashboard() {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                {/* مثال على تنبيه */}
                                 <div className="flex items-start gap-4 p-4 bg-white border border-red-200 rounded-lg shadow-sm">
                                     <div className="p-2 bg-red-100 rounded-full mt-1">
                                         <AlertCircle className="w-5 h-5 text-red-600" />
@@ -540,7 +526,6 @@ export default function FinanceDashboard() {
                             <CardDescription>اسأل عن أي تفاصيل مالية أو اطلب تحليلات معقدة.</CardDescription>
                         </CardHeader>
                         <CardContent className="flex-1 flex flex-col p-4 overflow-hidden">
-                            {/* منطقة الرسائل */}
                             <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 border rounded-lg bg-muted/10">
                                 {messages.map((msg, idx) => (
                                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-start' : 'justify-end'}`}>
@@ -568,7 +553,6 @@ export default function FinanceDashboard() {
                                 )}
                             </div>
 
-                            {/* منطقة الإدخال */}
                             <div className="flex gap-2">
                                 <Button onClick={handleChat} disabled={isChatting} className="gap-2">
                                     <Send className={`w-4 h-4 ${isChatting ? 'opacity-0' : ''}`} />
@@ -580,7 +564,7 @@ export default function FinanceDashboard() {
                                     onChange={(e) => setChatInput(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleChat()}
                                     disabled={isChatting}
-                                    className="flex-1" // Make it stretch to fill space
+                                    className="flex-1"
                                 />
                             </div>
                         </CardContent>
@@ -588,7 +572,8 @@ export default function FinanceDashboard() {
                 </TabsContent>
 
             </Tabs>
-            {/* Duplicate Alert Modal - RE-INSERTED */}
+
+            {/* Duplicate Alert Modal */}
             {showDuplicateAlert && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
                     <div className="bg-card text-card-foreground p-6 rounded-lg shadow-xl max-w-md w-full border border-border">
@@ -615,25 +600,5 @@ export default function FinanceDashboard() {
                 </div>
             )}
         </div>
-    );
-}
-
-// مكون بسيط للبطاقات الإحصائية
-function StatsCard({ title, value, change, icon: Icon, alert = false }: any) {
-    return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500">
-                    {title}
-                </CardTitle>
-                <Icon className={`h-4 w-4 ${alert ? 'text-red-500' : 'text-slate-500'}`} />
-            </CardHeader>
-            <CardContent>
-                <div className={`text-2xl font-bold ${alert ? 'text-red-600' : 'text-slate-900'}`}>{value}</div>
-                <p className="text-xs text-slate-500 mt-1">
-                    {change}
-                </p>
-            </CardContent>
-        </Card>
     );
 }
