@@ -12,6 +12,28 @@ export function ReportsHubWidget() {
     const [entityType, setEntityType] = useState("vendors");
     const [selectedEntity, setSelectedEntity] = useState<any>(null);
 
+    const getDateRangeLabel = (p: string) => {
+        const now = new Date(); // In a real app key off server time, but client time is fine for UI label
+        const year = now.getFullYear();
+        let start, end;
+
+        if (p === 'this_month') {
+            start = new Date(year, now.getMonth(), 1);
+            end = new Date(year, now.getMonth() + 1, 0);
+        } else if (p === 'this_quarter') {
+            const q = Math.floor((now.getMonth() + 3) / 3);
+            start = new Date(year, (q - 1) * 3, 1);
+            end = new Date(year, q * 3, 0);
+        } else {
+            // this_year
+            start = new Date(year, 0, 1);
+            end = new Date(year, 11, 31);
+        }
+
+        const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' }; // Ar-SA format
+        return `${start.toLocaleDateString('ar-EG', options)} - ${end.toLocaleDateString('ar-EG', options)}`;
+    };
+
     // Mock Data (Replace with fetch from API later)
     const stats = { net_income: 45000, assets: 120000, liabilities: 30000 };
     const entities = [
@@ -25,9 +47,9 @@ export function ReportsHubWidget() {
 
             {/* --- Zone 1: Time Control --- */}
             <div className="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border">
-                <h2 className="text-xl font-bold flex items-center gap-2">
+                <h2 className="text-lg font-bold flex items-center gap-2 text-slate-700">
                     <Calendar className="w-5 h-5 text-emerald-600" />
-                    مركز التقارير المالية
+                    <span dir="ltr" className="font-mono">{getDateRangeLabel(period)}</span>
                 </h2>
                 <div className="flex gap-2">
                     {["this_month", "this_quarter", "this_year"].map((p) => (
