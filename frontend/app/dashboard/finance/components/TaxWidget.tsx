@@ -9,12 +9,19 @@ export function TaxWidget() {
     const [loading, setLoading] = useState(false);
     const [history, setHistory] = useState<any[]>([]);
     const [latest, setLatest] = useState<any>(null);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
 
     const refreshHistory = async () => {
-        const data = await getTaxHistory();
-        setHistory(data);
-        if (data.length > 0) {
-            setLatest(data[0]);
+        try {
+            const data = await getTaxHistory();
+            setHistory(data);
+            if (data.length > 0) {
+                setLatest(data[0]);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsInitialLoading(false);
         }
     };
 
@@ -35,6 +42,10 @@ export function TaxWidget() {
         }
     };
 
+    const Skeleton = ({ className }: { className?: string }) => (
+        <div className={`bg-slate-200 dark:bg-slate-700 animate-pulse rounded ${className}`} />
+    );
+
     return (
         <Card className="h-full border-t-4 border-t-purple-500">
             <CardHeader>
@@ -48,15 +59,21 @@ export function TaxWidget() {
                     {/* Status Box */}
                     <div className="bg-purple-50 p-4 rounded-lg text-center border border-purple-100">
                         <p className="text-xs text-purple-600 mb-1">صافي ضريبة القيمة المضافة المستحقة</p>
-                        <div className="text-2xl font-bold text-purple-800">
-                            {latest ? `${latest.net_vat_payable?.toLocaleString()} SAR` : "0.00 SAR"}
+                        <div className="flex justify-center my-1">
+                            {isInitialLoading ? (
+                                <Skeleton className="h-8 w-32" />
+                            ) : (
+                                <div className="text-2xl font-bold text-purple-800">
+                                    {latest ? `${latest.net_vat_payable?.toLocaleString()} SAR` : "0.00 SAR"}
+                                </div>
+                            )}
                         </div>
                         <p className="text-[10px] text-muted-foreground mt-2">
-                            {latest ? `الفترة: ${latest.period_start?.split('T')[0]} - ${latest.period_end?.split('T')[0]}` : "لم يتم إنشاء إقرار"}
+                            {isInitialLoading ? <Skeleton className="h-3 w-40 mx-auto" /> : (latest ? `الفترة: ${latest.period_start?.split('T')[0]} - ${latest.period_end?.split('T')[0]}` : "لم يتم إنشاء إقرار")}
                         </p>
                     </div>
 
-                    <Button onClick={handleGenerate} disabled={loading} className="w-full bg-purple-600 hover:bg-purple-700">
+                    <Button onClick={handleGenerate} disabled={loading || isInitialLoading} className="w-full bg-purple-600 hover:bg-purple-700">
                         {loading ? "جاري الحساب..." : "توليد إقرار الربع الحالي"}
                     </Button>
 
@@ -72,26 +89,17 @@ export function TaxWidget() {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y">
-                                    {history.length === 0 && (
-                                        <tr>
-                                            <td colSpan={3} className="p-4 text-center text-muted-foreground">لا توجد إقرارات سابقة</td>
-                                        </tr>
-                                    )}
-                                    {history.map((report: any) => (
-                                        <tr key={report.id}>
-                                            <td className="p-2 font-medium">
-                                                {report.period_start?.split('T')[0]} <span className="text-slate-400 mx-1">إلى</span> {report.period_end?.split('T')[0]}
-                                            </td>
-                                            <td className="p-2 font-mono dir-ltr text-left">{report.net_vat_payable?.toLocaleString()} SAR</td>
-                                            <td className="p-2">
-                                                <span className={`px-2 py-0.5 rounded text-[10px] ${report.status === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                                                    {report.status || 'معلق'}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {/* Mock rows if history is empty for Demo */}
-                                    {history.length === 0 && (
+                                    {isInitialLoading ? (
+                                        // Loading Skeletons
+                                        [1, 2, 3].map((i) => (
+                                            <tr key={i}>
+                                                <td className="p-2"><Skeleton className="h-4 w-24" /></td>
+                                                <td className="p-2"><Skeleton className="h-4 w-16" /></td>
+                                                <td className="p-2"><Skeleton className="h-4 w-12" /></td>
+                                            </tr>
+                                        ))
+                                    ) : history.length === 0 ? (
+                                        // Empty State (Demo Mocks)
                                         <>
                                             <tr>
                                                 <td className="p-2">2023-01-01 - 2023-03-31</td>
@@ -104,6 +112,23 @@ export function TaxWidget() {
                                                 <td className="p-2"><span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px]">مدفوع</span></td>
                                             </tr>
                                         </>
+                                        // Alternatively, show "No Data" message if we don't want mocks
+                                        // <tr><td colSpan={3} className="p-4 text-center">لا توجد إقرارات</td></tr>
+                                    ) : (
+                                        // Real Data
+                                        history.map((report: any) => (
+                                            <tr key={report.id}>
+                                                <td className="p-2 font-medium">
+                                                    {report.period_start?.split('T')[0]} <span className="text-slate-400 mx-1">إلى</span> {report.period_end?.split('T')[0]}
+                                                </td>
+                                                <td className="p-2 font-mono dir-ltr text-left">{report.net_vat_payable?.toLocaleString()} SAR</td>
+                                                <td className="p-2">
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] ${report.status === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                        {report.status || 'معلق'}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))
                                     )}
                                 </tbody>
                             </table>
