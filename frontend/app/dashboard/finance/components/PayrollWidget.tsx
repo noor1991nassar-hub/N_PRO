@@ -130,6 +130,52 @@ export function PayrollWidget() {
                     </TabsContent>
                 </Tabs>
 
+                {/* Employee Table */}
+                <div className="mt-8 border-t pt-4">
+                    <h4 className="text-sm font-bold mb-3 text-slate-700 flex justify-between items-center">
+                        <span>سجل الموظفين والرواتب</span>
+                        <Button variant="ghost" size="sm" className="text-xs h-6">عرض الكل</Button>
+                    </h4>
+                    <div className="border rounded-md overflow-hidden">
+                        <table className="w-full text-xs text-right">
+                            <thead className="bg-slate-50 text-slate-500 font-medium">
+                                <tr>
+                                    <th className="p-2">الموظف</th>
+                                    <th className="p-2">المنصب</th>
+                                    <th className="p-2">الراتب الأساسي</th>
+                                    <th className="p-2">آخر راتب</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y">
+                                <tr>
+                                    <td className="p-2 font-medium">أحمد محمد</td>
+                                    <td className="p-2 text-slate-500">مدير مبيعات</td>
+                                    <td className="p-2">8,000 SAR</td>
+                                    <td className="p-2 text-emerald-600">تم التحويل</td>
+                                </tr>
+                                <tr>
+                                    <td className="p-2 font-medium">سارة علي</td>
+                                    <td className="p-2 text-slate-500">محاسبة</td>
+                                    <td className="p-2">6,500 SAR</td>
+                                    <td className="p-2 text-emerald-600">تم التحويل</td>
+                                </tr>
+                                <tr>
+                                    <td className="p-2 font-medium">خالد عبدالله</td>
+                                    <td className="p-2 text-slate-500">مهندس موقع</td>
+                                    <td className="p-2">12,000 SAR</td>
+                                    <td className="p-2 text-emerald-600">تم التحويل</td>
+                                </tr>
+                                <tr>
+                                    <td className="p-2 font-medium">نورة السعيد</td>
+                                    <td className="p-2 text-slate-500">HR Specialist</td>
+                                    <td className="p-2">7,200 SAR</td>
+                                    <td className="p-2 text-amber-600">معلق</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 {message && <p className="text-xs text-center mt-4 text-muted-foreground animate-pulse">{message}</p>}
             </CardContent>
         </Card>

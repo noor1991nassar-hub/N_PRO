@@ -64,7 +64,42 @@ export function ReconciliationWidget({ onReconcileComplete }: { onReconcileCompl
                         </div>
                     )}
                 </div>
-            </CardContent>
-        </Card>
-    );
+
+                {/* History Table */}
+                <div className="mt-8 pt-4 border-t">
+                    <h4 className="text-sm font-bold mb-3 text-slate-700">سجل المطابقات السابقة</h4>
+                    <div className="border rounded-md overflow-hidden">
+                        <table className="w-full text-xs text-right">
+                            <thead className="bg-slate-50 text-slate-500 font-medium">
+                                <tr>
+                                    <th className="p-2">التاريخ</th>
+                                    <th className="p-2">عدد العمليات</th>
+                                    <th className="p-2">تطابق</th>
+                                    <th className="p-2">الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y">
+                                <tr>
+                                    <td className="p-2">2023-11-01</td>
+                                    <td className="p-2">142</td>
+                                    <td className="p-2 text-emerald-600 font-bold">100%</td>
+                                    <td className="p-2"><span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px]">مكتمل</span></td>
+                                </tr>
+                                <tr>
+                                    <td className="p-2">2023-10-01</td>
+                                    <td className="p-2">98</td>
+                                    <td className="p-2 text-emerald-600 font-bold">100%</td>
+                                    <td className="p-2"><span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px]">مكتمل</span></td>
+                                </tr>
+                                <tr>
+                                    <td className="p-2">2023-09-01</td>
+                                    <td className="p-2">115</td>
+                                    <td className="p-2 text-amber-600 font-bold">92%</td>
+                                    <td className="p-2"><span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px]">معلق</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                );
 }

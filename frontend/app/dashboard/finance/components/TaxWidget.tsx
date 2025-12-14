@@ -60,17 +60,54 @@ export function TaxWidget() {
                         {loading ? "جاري الحساب..." : "توليد إقرار الربع الحالي"}
                     </Button>
 
-                    <div className="space-y-2">
-                        <h4 className="text-xs font-semibold text-slate-500">سجل الإقرارات</h4>
-                        {history.slice(0, 3).map((report: any) => (
-                            <div key={report.id} className="flex justify-between items-center bg-slate-50 p-2 rounded text-xs border">
-                                <span className="flex items-center gap-2">
-                                    <FileText className="w-3 h-3 text-slate-400" />
-                                    {report.period_end?.split('T')[0]}
-                                </span>
-                                <span className="font-mono">{report.net_vat_payable?.toLocaleString()}</span>
-                            </div>
-                        ))}
+                    <div className="mt-1 pt-2">
+                        <h4 className="text-xs font-semibold text-slate-500 mb-2">سجل الإقرارات الضريبية</h4>
+                        <div className="border rounded-md overflow-hidden">
+                            <table className="w-full text-xs text-right">
+                                <thead className="bg-slate-50 text-slate-500 font-medium">
+                                    <tr>
+                                        <th className="p-2">الفترة</th>
+                                        <th className="p-2">المبلغ</th>
+                                        <th className="p-2">الحالة</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y">
+                                    {history.length === 0 && (
+                                        <tr>
+                                            <td colSpan={3} className="p-4 text-center text-muted-foreground">لا توجد إقرارات سابقة</td>
+                                        </tr>
+                                    )}
+                                    {history.map((report: any) => (
+                                        <tr key={report.id}>
+                                            <td className="p-2 font-medium">
+                                                {report.period_start?.split('T')[0]} <span className="text-slate-400 mx-1">إلى</span> {report.period_end?.split('T')[0]}
+                                            </td>
+                                            <td className="p-2 font-mono dir-ltr text-left">{report.net_vat_payable?.toLocaleString()} SAR</td>
+                                            <td className="p-2">
+                                                <span className={`px-2 py-0.5 rounded text-[10px] ${report.status === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                    {report.status || 'معلق'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {/* Mock rows if history is empty for Demo */}
+                                    {history.length === 0 && (
+                                        <>
+                                            <tr>
+                                                <td className="p-2">2023-01-01 - 2023-03-31</td>
+                                                <td className="p-2 dir-ltr text-left">45,200 SAR</td>
+                                                <td className="p-2"><span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px]">مدفوع</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td className="p-2">2023-04-01 - 2023-06-30</td>
+                                                <td className="p-2 dir-ltr text-left">38,150 SAR</td>
+                                                <td className="p-2"><span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px]">مدفوع</span></td>
+                                            </tr>
+                                        </>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </CardContent>
