@@ -169,6 +169,33 @@ export default function FinanceDashboard() {
         }
     };
 
+    const handleForceUpload = async () => {
+        if (!pendingFile) return;
+
+        setShowDuplicateAlert(false);
+        setStatus('uploading');
+        setUploadProgress(0);
+        setErrorMessage("");
+
+        try {
+            // Force Upload
+            const doc = await uploadFile(pendingFile, true, (percent) => {
+                setUploadProgress(percent);
+            });
+
+            setStatus('analyzing');
+            await triggerExtraction(doc.id);
+
+            setStatus('success');
+            fetchInvoices().then(setInvoices);
+            setPendingFile(null);
+
+        } catch (error: any) {
+            setStatus('error');
+            setErrorMessage(error.message || "فشل استبدال الملف.");
+        }
+    };
+
     return (
         <div className="p-8 w-full font-sans" dir="rtl">
 
@@ -572,7 +599,7 @@ export default function FinanceDashboard() {
                             <Button variant="outline" onClick={() => { setShowDuplicateAlert(false); setPendingFile(null); }}>
                                 إلغاء
                             </Button>
-                            <Button variant="destructive" onClick={confirmOverwrite}>
+                            <Button variant="destructive" onClick={handleForceUpload}>
                                 استبدال الملف
                             </Button>
                         </div>

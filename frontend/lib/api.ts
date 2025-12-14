@@ -26,7 +26,10 @@ export async function uploadFile(file: File, force: boolean = false, onProgress?
         });
         return res.data;
     } catch (error: any) {
-        throw new Error(error.response?.data?.detail || "Upload failed");
+        // Propagate status code for handling (e.g. 409 Duplicate)
+        const status = error.response?.status;
+        const detail = error.response?.data?.detail || "Upload failed";
+        throw { status, message: detail };
     }
 }
 
