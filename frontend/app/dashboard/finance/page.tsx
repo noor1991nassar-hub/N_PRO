@@ -60,8 +60,10 @@ export default function FinanceDashboard() {
     // Dashboard Data State
     const [summaryData, setSummaryData] = useState<any>(null);
     const [tasks, setTasks] = useState<any[]>([]);
+    const [isDashboardLoading, setIsDashboardLoading] = useState(true);
 
     const loadDashboardData = async () => {
+        setIsDashboardLoading(true);
         try {
             const sum = await getFinancialSummary();
             setSummaryData(sum);
@@ -69,25 +71,12 @@ export default function FinanceDashboard() {
             setTasks(tsks);
         } catch (e) {
             console.error("Failed to load dashboard data", e);
+        } finally {
+            setIsDashboardLoading(false);
         }
     };
 
-    // Expandable Rows State
-    const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-
-    const toggleRow = (id: number) => {
-        const next = new Set(expandedRows);
-        if (next.has(id)) {
-            next.delete(id);
-        } else {
-            next.add(id);
-        }
-        setExpandedRows(next);
-    };
-
-    // Duplicate Handling State
-    const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
-    const [pendingFile, setPendingFile] = useState<File | null>(null);
+    // ... (rest of code)
 
     // Load Data on Tab Change or Mount
     useEffect(() => {
@@ -98,6 +87,11 @@ export default function FinanceDashboard() {
             loadDashboardData();
         }
     }, [activeTab]);
+
+    // ...
+
+    {/* Financial Summary */ }
+    <SummaryCards data={summaryData} isLoading={isDashboardLoading} />
 
     // Chat State
     const [messages, setMessages] = useState<{ role: 'user' | 'ai', content: string }[]>([
@@ -267,7 +261,7 @@ export default function FinanceDashboard() {
                 <TabsContent value="dashboard" className="space-y-4">
 
                     {/* Financial Summary */}
-                    <SummaryCards data={summaryData} />
+                    <SummaryCards data={summaryData} isLoading={isDashboardLoading} />
 
                     {/* Widgets Grid */}
                     <div className="grid grid-cols-1 gap-6">
