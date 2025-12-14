@@ -5,7 +5,7 @@ from app.core.middleware import TenantMiddleware
 from app.api.api import api_router
 from app.core.database import Base, engine
 # Import models to ensure they are registered with Base
-from app.models import tenant, document, finance
+from app.models import tenant, document, finance, payroll
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
