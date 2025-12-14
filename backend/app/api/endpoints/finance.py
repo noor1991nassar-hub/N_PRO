@@ -36,7 +36,7 @@ async def list_invoices(
     Get Data Grid (Tab 3) Data.
     """
     # Resolve Tenant ID
-    target_name = tenant_name if tenant_name else "Construction Corp"
+    target_name = tenant_name if tenant_name else "Finance Corp"
     stmt = select(Tenant).where(Tenant.company_name == target_name)
     result = await db.execute(stmt)
     tenant = result.scalars().first()
@@ -85,8 +85,8 @@ async def get_financial_summary(
     db: AsyncSession = Depends(get_db),
     tenant_name: str = Depends(get_current_tenant_id),
 ):
-    # Resolve Tenant (Reusable logic ideally, duplicated for speed here)
-    target_name = tenant_name if tenant_name else "Construction Corp"
+    # Resolve Tenant ID
+    target_name = tenant_name if tenant_name else "Finance Corp"
     stmt = select(Tenant).where(Tenant.company_name == target_name)
     result = await db.execute(stmt)
     tenant = result.scalars().first()
@@ -99,7 +99,7 @@ async def get_accountant_tasks(
     db: AsyncSession = Depends(get_db),
     tenant_name: str = Depends(get_current_tenant_id),
 ):
-    target_name = tenant_name if tenant_name else "Construction Corp"
+    target_name = tenant_name if tenant_name else "Finance Corp"
     stmt = select(Tenant).where(Tenant.company_name == target_name)
     result = await db.execute(stmt)
     tenant = result.scalars().first()

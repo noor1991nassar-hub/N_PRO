@@ -9,33 +9,56 @@ from app.core.config import settings
 from app.core.database import Base
 from app.models import (
     Tenant, FinanceVendor, FinanceInvoice, FinanceInvoiceItem, 
-    ChartOfAccounts, Employee, EmploymentContract, BankTransaction
+    ChartOfAccounts, Employee, EmploymentContract, BankTransaction,
+    Document, PayrollRun, VATReport, User, UserRole
 )
 
 # Setup Sync Engine for Seeding
-db_uri = settings.SQLALCHEMY_DATABASE_URI
-if "+aiosqlite" in db_uri:
-    db_uri = db_uri.replace("+aiosqlite", "")
-elif "+asyncpg" in db_uri:
-    db_uri = db_uri.replace("+asyncpg", "")
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
-engine = create_engine(db_uri)
+# Use DATABASE_URL from env, but handle asyncpg prefix if present (convert to sync)
+db_url = os.getenv("DATABASE_URL")
+if db_url:
+    if "postgresql+asyncpg" in db_url:
+        db_url = db_url.replace("postgresql+asyncpg", "postgresql")
+    elif "postgresql" in db_url and "psycopg2" not in db_url and "+" not in db_url:
+        # standard postgresql:// might work, checking if we need explicit driver
+        pass
+else:
+    # Fallback to SQLite if no env set
+    db_url = "sqlite:///./corporate_memory.db"
+
+print(f"DEBUG: Seeding to {db_url.split('@')[-1] if '@' in db_url else db_url}") # Safe print
+
+engine = create_engine(db_url)
 SessionLocal = sessionmaker(bind=engine)
 
 # تأكد أن الجداول موجودة
-Base.metadata.create_all(bind=engine)
+# Base.metadata.drop_all(bind=engine) # REMOVED: Schema is verified correct
+# Base.metadata.create_all(bind=engine) # REMOVED: Schema is verified correct
 
 def seed_demo():
     db = SessionLocal()
     
     # 1. إنشاء شركة (Tenant) إذا لم توجد
-    tenant = db.query(Tenant).filter_by(name="الشركة السعودية النموذجية").first()
+    tenant = db.query(Tenant).filter_by(company_name="Finance Corp").first()
     if not tenant:
-        tenant = Tenant(name="الشركة السعودية النموذجية", plan="Enterprise")
+        tenant = Tenant(company_name="Finance Corp", subscription_status=True, subscribed_modules=["finance", "hr"])
         db.add(tenant)
         db.commit()
     
-    print(f"Working with Tenant: {tenant.name} (ID: {tenant.id})")
+    print(f"Working with Tenant: {tenant.company_name} (ID: {tenant.id})")
+
+
+
+    # 1.1 إنشاء وثائق (Documents)
+    if db.query(Document).filter_by(tenant_id=tenant.id).count() == 0:
+        doc1 = Document(tenant_id=tenant.id, filename="فاتورة_كهرباء_يناير.pdf", status="indexed", upload_date=datetime.now() - timedelta(days=10))
+        doc2 = Document(tenant_id=tenant.id, filename="عقد_موظف_جديد.pdf", status="indexed", upload_date=datetime.now() - timedelta(days=2))
+        db.add_all([doc1, doc2])
+        db.commit()
 
     # 2. إنشاء الموردين (Vendors)
     vendors_data = [
@@ -55,8 +78,21 @@ def seed_demo():
             db.commit()
         vendors.append(vendor)
 
-    # 3. إنشاء دليل الحسابات (تأكد من وجوده)
-    # (نعتمد على seed_coa.py السابق، لكن سنتأكد من وجود كود واحد على الأقل)
+    # 3. إنشاء دليل الحسابات (Chart of Accounts)
+    coa_data = [
+        {"code": "1000", "name": "Cash", "type": "Asset"},
+        {"code": "1400", "name": "IT Equipment", "type": "Asset"},
+        {"code": "5200", "name": "Maintenance", "type": "Expense"},
+        {"code": "5300", "name": "Utilities", "type": "Expense"},
+        {"code": "5400", "name": "Marketing", "type": "Expense"},
+        {"code": "5500", "name": "Office Supplies", "type": "Expense"},
+    ]
+    
+    for acc in coa_data:
+        if not db.query(ChartOfAccounts).filter_by(code=acc["code"]).first():
+            db.add(ChartOfAccounts(code=acc["code"], name=acc["name"], account_type=acc["type"]))
+    db.commit()
+    
     cash_acc = db.query(ChartOfAccounts).filter_by(code="1000").first()
     
     # 4. إنشاء فواتير عشوائية (Invoices) - خلال آخر 3 شهور
@@ -117,8 +153,21 @@ def seed_demo():
             )
             db.add(bank_tx)
 
-    # 6. إنشاء موظفين (Employees)
-    if db.query(Employee).count() == 0:
+    # 6. إنشاء موظفين (Employees) & Users
+    # Create the Finance User for Login
+    finance_user = db.query(User).filter_by(email="finance@company.com").first()
+    if not finance_user:
+        finance_user = User(
+            email="finance@company.com",
+            full_name="Fatima Finance",
+            hashed_password="password",
+            tenant_id=tenant.id,
+            role=UserRole.ACCOUNTANT
+        )
+        db.add(finance_user)
+        db.commit()
+
+    if db.query(Employee).filter_by(tenant_id=tenant.id).count() == 0:
         emp1 = Employee(tenant_id=tenant.id, name="أحمد محمد", national_id="1010101010", email="ahmed@company.com")
         emp2 = Employee(tenant_id=tenant.id, name="سارة علي", national_id="1020202020", email="sara@company.com")
         db.add_all([emp1, emp2])
@@ -128,6 +177,26 @@ def seed_demo():
         con1 = EmploymentContract(employee_id=emp1.id, basic_salary=6000, housing_allowance=1500, transport_allowance=500, start_date=datetime.now())
         con2 = EmploymentContract(employee_id=emp2.id, basic_salary=8000, housing_allowance=2000, transport_allowance=800, start_date=datetime.now())
         db.add_all([con1, con2])
+        db.commit()
+
+        # 7. مسير رواتب (Payroll Run)
+        run = PayrollRun(tenant_id=tenant.id, month=datetime.now().month, year=2024, total_payout=17800, status="Paid")
+        db.add(run)
+        
+        # 8. إقرار ضريبي (VAT Report)
+        vat_report = VATReport(
+            tenant_id=tenant.id, 
+            period_start=datetime.strptime("2024-01-01", "%Y-%m-%d"), 
+            period_end=datetime.strptime("2024-03-31", "%Y-%m-%d"), 
+            total_sales=100000.0,
+            total_sales_vat=15000.0,
+            total_purchases=20000.0,
+            total_purchases_vat=3000.0,
+            net_vat_payable=12000.0, 
+            status="Submitted"
+        )
+        db.add(vat_report)
+
 
     db.commit()
     db.close()

@@ -3,7 +3,7 @@ import axios from "axios";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 // Hardcoded for demo purposes
-const TENANT_ID = "Construction Corp";
+const TENANT_ID = "Finance Corp";
 
 // --- Document & Chat APIs ---
 export async function uploadFile(file: File, force: boolean = false, onProgress?: (percent: number) => void) {
