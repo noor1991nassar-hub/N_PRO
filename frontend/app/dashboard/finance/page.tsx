@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 // UI Components
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardDescription, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -28,7 +28,8 @@ import {
     Cpu,
     PlusCircle,
     MinusCircle,
-    Plus
+    Plus,
+    PieChart
 } from "lucide-react";
 
 // API
@@ -43,6 +44,7 @@ import { TaskWidget } from "./components/TaskWidget";
 import { ReconciliationWidget } from "./components/ReconciliationWidget";
 import { TaxWidget } from "./components/TaxWidget";
 import { PayrollWidget } from "./components/PayrollWidget";
+import { ReportsHubWidget } from "./components/ReportsHubWidget";
 
 export default function FinanceDashboard() {
     const [status, setStatus] = useState<'idle' | 'uploading' | 'analyzing' | 'success' | 'error'>('idle');
@@ -228,7 +230,7 @@ export default function FinanceDashboard() {
             <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
 
                 {/* شريط التنقل */}
-                <TabsList className="grid w-full grid-cols-5 h-14 bg-card border border-border shadow-sm rounded-xl p-1">
+                <TabsList className="grid w-full grid-cols-6 h-14 bg-card border border-border shadow-sm rounded-xl p-1">
                     <TabsTrigger value="dashboard" className="data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 text-base gap-2">
                         <LayoutDashboard className="w-4 h-4" /> مركز القيادة
                     </TabsTrigger>
@@ -237,6 +239,9 @@ export default function FinanceDashboard() {
                     </TabsTrigger>
                     <TabsTrigger value="datagrid" className="data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 text-base gap-2">
                         <TableIcon className="w-4 h-4" /> السجلات المحاسبية
+                    </TabsTrigger>
+                    <TabsTrigger value="reports" className="data-[state=active]:bg-pink-50 data-[state=active]:text-pink-700 text-base gap-2">
+                        <PieChart className="w-4 h-4" /> التقارير المالية
                     </TabsTrigger>
                     <TabsTrigger value="audit" className="data-[state=active]:bg-red-50 data-[state=active]:text-red-700 text-base gap-2">
                         <ShieldAlert className="w-4 h-4" /> المدقق الذكي
@@ -483,7 +488,12 @@ export default function FinanceDashboard() {
                     </Card>
                 </TabsContent>
 
-                {/* --- التاب 4: المدقق الذكي (Audit) --- */}
+                {/* --- التاب 4: التقارير المالية (Reports) --- */}
+                <TabsContent value="reports" className="space-y-4">
+                    <ReportsHubWidget />
+                </TabsContent>
+
+                {/* --- التاب 5: المدقق الذكي (Audit) --- */}
                 <TabsContent value="audit">
                     <Card className="border-red-100 bg-red-50/10">
                         <CardHeader>
@@ -515,7 +525,7 @@ export default function FinanceDashboard() {
                     </Card>
                 </TabsContent>
 
-                {/* --- التاب 5: المحلل المالي (Analyst) --- */}
+                {/* --- التاب 6: المحلل المالي (Analyst) --- */}
                 <TabsContent value="analyst">
                     <Card className="h-[600px] flex flex-col">
                         <CardHeader className="border-b bg-slate-50/50">
