@@ -6,3 +6,5 @@ api_router.include_router(documents.router, prefix="/app", tags=["documents"])
 api_router.include_router(chat.router, prefix="/app", tags=["chat"])
 api_router.include_router(finance.router, prefix="/app/finance", tags=["finance"])
 api_router.include_router(payroll.router, prefix="/app/payroll", tags=["payroll"])
+from app.api.endpoints import reports
+api_router.include_router(reports.router, prefix="/app/reports", tags=["reports"])
