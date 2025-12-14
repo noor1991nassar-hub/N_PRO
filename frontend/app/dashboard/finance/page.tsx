@@ -270,25 +270,10 @@ export default function FinanceDashboard() {
                     <SummaryCards data={summaryData} />
 
                     {/* Widgets Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[850px] md:h-[450px]">
-                        {/* Row 1, Col 1: Tasks */}
+                    <div className="grid grid-cols-1 gap-6">
+                        {/* Row 1: Tasks */}
                         <div className="h-full">
                             <TaskWidget tasks={tasks} />
-                        </div>
-
-                        {/* Row 1, Col 2: Reconciliation */}
-                        <div className="h-full">
-                            <ReconciliationWidget onReconcileComplete={loadDashboardData} />
-                        </div>
-
-                        {/* Row 2, Col 1: Tax */}
-                        <div className="h-full">
-                            <TaxWidget />
-                        </div>
-
-                        {/* Row 2, Col 2: Payroll */}
-                        <div className="h-full">
-                            <PayrollWidget />
                         </div>
                     </div>
 
@@ -503,6 +488,21 @@ export default function FinanceDashboard() {
                 {/* --- التاب 4: التقارير المالية (Reports) --- */}
                 <TabsContent value="reports" className="space-y-4">
                     <ReportsHubWidget />
+                </TabsContent>
+
+                {/* --- التاب 5: المطابقة البنكية (Reconciliation) --- */}
+                <TabsContent value="reconciliation" className="space-y-4">
+                    <ReconciliationWidget onReconcileComplete={loadDashboardData} />
+                </TabsContent>
+
+                {/* --- التاب 6: الضرائب (Tax) --- */}
+                <TabsContent value="tax" className="space-y-4">
+                    <TaxWidget />
+                </TabsContent>
+
+                {/* --- التاب 7: الرواتب (Payroll) --- */}
+                <TabsContent value="payroll" className="space-y-4">
+                    <PayrollWidget />
                 </TabsContent>
 
                 {/* --- التاب 5: المدقق الذكي (Audit) --- */}
