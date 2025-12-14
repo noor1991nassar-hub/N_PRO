@@ -43,20 +43,33 @@
 
 ## 🛠 Features
 
-1.  **Strict Multi-Tenancy**:
+1.  **AI Finance Dashboard (New)**:
+    - **Smart Invoice Extraction**: AI automatically parses PDF invoices (Vendor, Date, Line Items, Amounts) and populates a Data Grid.
+    - **Reconciliation Widget**: Matches bank transaction logic with recorded invoices.
+    - **Tax Engine**: Auto-generates ZATCA-compliant VAT reports (Input vs Output Tax).
+    - **Payroll System**: Parses employee contracts and runs monthly payroll calculations (WPS ready).
+    - **Reports Hub**: Visualizes Cash Flow, Net Income, and Entity Balances.
+
+2.  **Strict Multi-Tenancy**:
     - Data is isolated per tenant using a `X-Tenant-ID` header.
     - Middleware ensures requests are routed to the correct context.
 
-2.  **RAG Pipeline (Retrieval-Augmented Generation)**:
+3.  **RAG Pipeline (Retrieval-Augmented Generation)**:
     - **Upload**: Supports PDF, MP3, MP4. Files are uploaded to Google Gemini's File API.
     - **Indexing**: Metadata is stored in Postgres, while vector embeddings are managed by Gemini.
     - **Chat**: Users query their workspace; the system retrieves relevant context and generates citations.
 
-3.  **Arabic-First UI**:
+4.  **Arabic-First UI**:
     - Dashboard built from the ground up for Right-to-Left (RTL) layouts.
     - Professional Arabic terminology used throughout the interface.
 
-## 🚦 Getting Started
+## ☁️ Deployment (Cloud Ready)
+- **Database**: configured for **Neon.tech** (PostgreSQL).
+- **Backend**: configured for **Render.com** (FastAPI).
+- **Frontend**: configured for **Vercel** (Next.js).
+- **Guide**: See `deployment_guide.md` for full instructions on setting up the cloud environment and preventing "cold starts".
+
+## 🚦 Getting Started Locally
 
 ### Prerequisites
 - **Docker Desktop** (for PostgreSQL).
